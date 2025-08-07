@@ -78,7 +78,7 @@ export default function ClienteCriativoDetalhes() {
           return
         }
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/creatives/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-back-end.onrender.com/api'}/creatives/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
