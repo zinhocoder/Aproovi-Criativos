@@ -78,7 +78,7 @@ export default function ClienteCriativoDetalhes() {
           return
         }
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev/api'}/creatives/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev'}/api/creatives/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

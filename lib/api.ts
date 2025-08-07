@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev';
 
 export interface Creative {
   id: string;
@@ -88,15 +88,29 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
-
+      
+      // Verificar se a resposta é válida
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
-
+      
+      const data = await response.json();
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      
+      // Tratamento específico para erros de rede
+      if (error instanceof Error && error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Servidor temporariamente indisponível. Tente novamente em alguns segundos.');
+      }
+      
       throw error;
     }
   }
@@ -109,7 +123,7 @@ class ApiService {
     if (tipo) params.append('tipo', tipo);
     
     const queryString = params.toString();
-    const url = `/creatives${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/creatives${queryString ? `?${queryString}` : ''}`;
     
     return this.request<Creative[]>(url);
   }
@@ -124,7 +138,7 @@ class ApiService {
     if (tipo) formData.append('tipo', tipo);
     if (empresaId) formData.append('empresaId', empresaId);
 
-    const response = await fetch(`${API_BASE_URL}/creatives/upload`, {
+    const response = await fetch(`${API_BASE_URL}/api/creatives/upload`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -157,7 +171,7 @@ class ApiService {
     if (empresaId) formData.append('empresaId', empresaId);
     formData.append('fileCount', files.length.toString());
 
-    const response = await fetch(`${API_BASE_URL}/creatives/upload-multiple`, {
+    const response = await fetch(`${API_BASE_URL}/api/creatives/upload-multiple`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -175,14 +189,14 @@ class ApiService {
   }
 
   async updateCreativeStatus(id: string, status: 'pendente' | 'aprovado' | 'reprovado'): Promise<ApiResponse<Creative>> {
-    return this.request<Creative>(`/creatives/${id}/status`, {
+    return this.request<Creative>(`/api/creatives/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
   }
 
   async addCreativeComment(id: string, comentario: string): Promise<ApiResponse<Creative>> {
-    return this.request<Creative>(`/creatives/${id}/comment`, {
+    return this.request<Creative>(`/api/creatives/${id}/comment`, {
       method: 'PUT',
       body: JSON.stringify({ comentario }),
     });
@@ -193,7 +207,7 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/creatives/${id}/versions`, {
+    const response = await fetch(`${API_BASE_URL}/api/creatives/${id}/versions`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -212,14 +226,14 @@ class ApiService {
 
   // Autenticação
   async login(email: string, password: string, userType: 'agency' | 'client' = 'agency'): Promise<ApiResponse<{ token: string; user: any }>> {
-    return this.request<{ token: string; user: any }>('/auth/login', {
+    return this.request<{ token: string; user: any }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password, userType }),
     });
   }
 
   async register(name: string, email: string, password: string, userType: 'agency' | 'client' = 'agency'): Promise<ApiResponse<{ token: string; user: any }>> {
-    return this.request<{ token: string; user: any }>('/auth/register', {
+    return this.request<{ token: string; user: any }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ name, email, password, userType }),
     });
@@ -234,7 +248,7 @@ class ApiService {
 
   // Deletar criativo (soft delete)
   async deleteCreative(id: string): Promise<ApiResponse<Creative>> {
-    return this.request<Creative>(`/creatives/${id}`, {
+    return this.request<Creative>(`/api/creatives/${id}`, {
       method: 'DELETE',
     });
   }
@@ -245,7 +259,7 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/creatives/${id}/image`, {
+    const response = await fetch(`${API_BASE_URL}/api/creatives/${id}/image`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -262,7 +276,7 @@ class ApiService {
 
   // Adicionar comentário ao histórico
   async addCommentToHistory(id: string, comentario: string): Promise<ApiResponse<Creative & { comentario: Comment }>> {
-    return this.request<Creative & { comentario: Comment }>(`/creatives/${id}/comments`, {
+    return this.request<Creative & { comentario: Comment }>(`/api/creatives/${id}/comments`, {
       method: 'POST',
       body: JSON.stringify({ comentario }),
     });
@@ -272,7 +286,7 @@ class ApiService {
 
   // Listar empresas
   async getEmpresas(includeInactive: boolean = false): Promise<ApiResponse<Empresa[]>> {
-    return this.request<Empresa[]>(`/empresas?includeInactive=${includeInactive}`);
+    return this.request<Empresa[]>(`/api/empresas?includeInactive=${includeInactive}`);
   }
 
   // Criar empresa
@@ -283,7 +297,7 @@ class ApiService {
     if (clienteEmail) formData.append('clienteEmail', clienteEmail);
     if (logo) formData.append('logo', logo);
 
-    return this.request<Empresa>('/empresas', {
+    return this.request<Empresa>('/api/empresas', {
       method: 'POST',
       body: formData,
     });
@@ -291,17 +305,17 @@ class ApiService {
 
   // Buscar empresa por ID
   async getEmpresaById(id: string): Promise<ApiResponse<Empresa>> {
-    return this.request<Empresa>(`/empresas/${id}`);
+    return this.request<Empresa>(`/api/empresas/${id}`);
   }
 
   // Buscar empresa por e-mail do cliente
   async getEmpresaByClienteEmail(email: string): Promise<ApiResponse<Empresa>> {
-    return this.request<Empresa>(`/empresas/cliente/${encodeURIComponent(email)}`);
+    return this.request<Empresa>(`/api/empresas/cliente/${encodeURIComponent(email)}`);
   }
 
   // Verificar se e-mail está registrado em empresa (endpoint público)
   async verifyClientEmail(email: string): Promise<ApiResponse<{ empresa: string; email: string }>> {
-    const response = await fetch(`${API_BASE_URL}/empresas/verify-email/${encodeURIComponent(email)}`, {
+    const response = await fetch(`${API_BASE_URL}/api/empresas/verify-email/${encodeURIComponent(email)}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -323,7 +337,7 @@ class ApiService {
     if (data.ativa !== undefined) formData.append('ativa', data.ativa.toString());
     if (data.logo) formData.append('logo', data.logo);
 
-    return this.request<Empresa>(`/empresas/${id}`, {
+    return this.request<Empresa>(`/api/empresas/${id}`, {
       method: 'PUT',
       body: formData,
     });
@@ -331,7 +345,7 @@ class ApiService {
 
   // Deletar empresa (desativar)
   async deleteEmpresa(id: string): Promise<ApiResponse<Empresa>> {
-    return this.request<Empresa>(`/empresas/${id}`, {
+    return this.request<Empresa>(`/api/empresas/${id}`, {
       method: 'DELETE',
     });
   }
@@ -343,7 +357,7 @@ class ApiService {
     if (tipo) params.append('tipo', tipo);
     
     const queryString = params.toString();
-    const url = `/empresas/${id}/creatives${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/empresas/${id}/creatives${queryString ? `?${queryString}` : ''}`;
     
     return this.request<Creative[]>(url);
   }
