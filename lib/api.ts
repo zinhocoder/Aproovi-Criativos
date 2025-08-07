@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev/api';
 
 export interface Creative {
   id: string;
