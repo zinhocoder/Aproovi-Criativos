@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-violet-50 dark:bg-violet-950/20">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-blue-50 dark:bg-blue-950/20">
       <div className="absolute top-8 right-8">
         <ThemeToggle />
       </div>
@@ -154,7 +154,7 @@ export default function LoginPage() {
             <p className="text-muted-foreground">
               Credenciais de demonstração:
               <br />
-              Email: demo@aproovi.com
+              Email: demo@ccs.com
               <br />
               Senha: demo123
             </p>

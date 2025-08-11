@@ -123,9 +123,14 @@ class ApiService {
     if (tipo) params.append('tipo', tipo);
     
     const queryString = params.toString();
-    const url = `/api/creatives${queryString ? `?${queryString}` : ''}`;
+    const endpoint = queryString ? `/api/creatives?${queryString}` : '/api/creatives';
     
-    return this.request<Creative[]>(url);
+    return this.request<Creative[]>(endpoint);
+  }
+
+  // Buscar criativo específico por ID
+  async getCreativeById(id: string): Promise<ApiResponse<Creative>> {
+    return this.request<Creative>(`/api/creatives/${id}`);
   }
 
   async uploadCreative(file: File, titulo?: string, legenda?: string, tipo?: string, empresaId?: string): Promise<ApiResponse<Creative>> {
@@ -188,10 +193,10 @@ class ApiService {
     return data;
   }
 
-  async updateCreativeStatus(id: string, status: 'pendente' | 'aprovado' | 'reprovado'): Promise<ApiResponse<Creative>> {
+  async updateCreativeStatus(id: string, status: 'pendente' | 'aprovado' | 'reprovado', comentario?: string): Promise<ApiResponse<Creative>> {
     return this.request<Creative>(`/api/creatives/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, comentario }),
     });
   }
 
@@ -232,10 +237,16 @@ class ApiService {
     });
   }
 
-  async register(name: string, email: string, password: string, userType: 'agency' | 'client' = 'agency'): Promise<ApiResponse<{ token: string; user: any }>> {
+  async register(name: string, email: string, password: string, userType: 'agency' | 'client' = 'agency', accessKey?: string): Promise<ApiResponse<{ token: string; user: any }>> {
     return this.request<{ token: string; user: any }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, userType }),
+      body: JSON.stringify({ name, email, password, userType, accessKey }),
+    });
+  }
+
+  async checkAgencyRegistration(accessKey: string): Promise<ApiResponse<{ available: boolean; message: string }>> {
+    return this.request<{ available: boolean; message: string }>(`/api/auth/check-agency-registration?accessKey=${encodeURIComponent(accessKey)}`, {
+      method: 'GET',
     });
   }
 

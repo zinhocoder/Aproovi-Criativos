@@ -51,6 +51,7 @@ import { useCreatives } from '@/hooks/use-creatives'
 import { Creative, apiService } from '@/lib/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ClientDashboard() {
   const { company, loading: companyLoading } = useClientCompany()
@@ -58,6 +59,7 @@ export default function ClientDashboard() {
     updateStatus, 
     addComment
   } = useCreatives()
+  const { toast } = useToast()
 
   // Estado local para criativos do cliente (isolado)
   const [creatives, setCreatives] = useState<Creative[]>([])
@@ -130,20 +132,23 @@ export default function ClientDashboard() {
   const handleAprovar = async (creative: Creative) => {
     setIsSubmitting(true)
     try {
-      await updateStatus(creative.id, 'aprovado')
-      if (comentario.trim()) {
-        await addComment(creative.id, comentario)
-        setComentario('')
-      }
+      const response = await updateStatus(creative.id, 'aprovado', comentario)
+      
+      setComentario('')
       
       // Recarregar criativos após aprovação
       if (company?.id) {
-        await fetchCompanyCreatives(company.id)
+        const updatedCreatives = await fetchCompanyCreatives(company.id)
+        
+        // Atualizar o criativo selecionado no modal
+        const updatedCreative = updatedCreatives?.find(c => c.id === creative.id)
+        if (updatedCreative) {
+          setSelectedCreative(updatedCreative)
+        }
       }
       
       // Fechar modal e mostrar sucesso
       setDialogOpen(false)
-      setSelectedCreative(null)
       
     } catch (error) {
       console.error('Erro ao aprovar:', error)
@@ -154,25 +159,48 @@ export default function ClientDashboard() {
 
   // Função para reprovar criativo
   const handleReprovar = async (creative: Creative) => {
+    // Verificar se há comentário quando reprovar
+    if (!comentario.trim()) {
+      toast({
+        title: "Comentário obrigatório",
+        description: "É obrigatório escrever um comentário ao reprovar um criativo",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsSubmitting(true)
     try {
-      await updateStatus(creative.id, 'reprovado')
-      if (comentario.trim()) {
-        await addComment(creative.id, comentario)
-        setComentario('')
-      }
+      const response = await updateStatus(creative.id, 'reprovado', comentario)
+      
+      setComentario('')
       
       // Recarregar criativos após reprovação
       if (company?.id) {
-        await fetchCompanyCreatives(company.id)
+        const updatedCreatives = await fetchCompanyCreatives(company.id)
+        
+        // Atualizar o criativo selecionado no modal
+        const updatedCreative = updatedCreatives?.find(c => c.id === creative.id)
+        if (updatedCreative) {
+          setSelectedCreative(updatedCreative)
+        }
       }
       
       // Fechar modal e mostrar sucesso
       setDialogOpen(false)
-      setSelectedCreative(null)
+      
+      toast({
+        title: "Criativo reprovado",
+        description: "O criativo foi reprovado com sucesso",
+      })
       
     } catch (error) {
       console.error('Erro ao reprovar:', error)
+      toast({
+        title: "Erro ao reprovar",
+        description: "Ocorreu um erro ao reprovar o criativo",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -257,13 +285,13 @@ export default function ClientDashboard() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-6"></div>
+          <div className="h-8 bg-muted rounded mb-6"></div>
           <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <div className="h-24 bg-gray-200 rounded"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
+            <div className="h-24 bg-muted rounded"></div>
+            <div className="h-24 bg-muted rounded"></div>
+            <div className="h-24 bg-muted rounded"></div>
           </div>
-          <div className="h-96 bg-gray-200 rounded"></div>
+          <div className="h-96 bg-muted rounded"></div>
         </div>
       </div>
     )
@@ -273,8 +301,8 @@ export default function ClientDashboard() {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Empresa não encontrada</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Empresa não encontrada</h1>
+          <p className="text-muted-foreground">
             Não foi possível carregar as informações da empresa.
           </p>
         </div>
@@ -287,10 +315,10 @@ export default function ClientDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Meus Criativos
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Visualize, aprove e comente os criativos da {company.nome}
           </p>
         </div>
@@ -352,7 +380,7 @@ export default function ClientDashboard() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Buscar por título ou legenda..."
                   value={searchTerm}
@@ -399,10 +427,10 @@ export default function ClientDashboard() {
               {[1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse">
                   <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gray-200 rounded"></div>
+                    <div className="w-16 h-16 bg-muted rounded"></div>
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
                     </div>
                   </div>
                 </div>
@@ -410,11 +438,11 @@ export default function ClientDashboard() {
             </div>
           ) : filteredCreatives.length === 0 ? (
             <div className="text-center py-12">
-              <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 Nenhum criativo encontrado
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 {searchTerm || statusFilter !== 'all' || tipoFilter !== 'all'
                   ? 'Tente ajustar os filtros para encontrar criativos.'
                   : 'Ainda não há criativos para esta empresa.'}
@@ -425,11 +453,11 @@ export default function ClientDashboard() {
               {filteredCreatives.map((creative) => (
                 <div
                   key={creative.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors dark:border-gray-800 dark:hover:bg-gray-900"
+                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center space-x-4">
                     {/* Thumbnail */}
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 dark:bg-gray-800">
+                    <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                       <img
                         src={creative.url}
                         alt={creative.titulo || 'Criativo'}
@@ -441,7 +469,7 @@ export default function ClientDashboard() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         {getTipoIcon(creative.tipo || 'post')}
-                        <h3 className="text-sm font-medium text-gray-900 truncate dark:text-gray-100">
+                        <h3 className="text-sm font-medium text-foreground truncate">
                           {creative.titulo || 'Sem título'}
                         </h3>
                         <Badge className={getStatusBadgeVariant(creative.status)}>
@@ -557,13 +585,13 @@ export default function ClientDashboard() {
                             </div>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleReprovar(creative)}
-                                disabled={isSubmitting || !comentario.trim()}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                {isSubmitting ? 'Reprovando...' : 'Reprovar'}
-                              </AlertDialogAction>
+                                                             <AlertDialogAction
+                                 onClick={() => handleReprovar(creative)}
+                                 disabled={isSubmitting}
+                                 className="bg-red-600 hover:bg-red-700"
+                               >
+                                 {isSubmitting ? 'Reprovando...' : 'Reprovar'}
+                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -619,30 +647,32 @@ export default function ClientDashboard() {
                 {/* Informações */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <h4 className="font-medium text-sm text-gray-500 mb-2">INFORMAÇÕES</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">INFORMAÇÕES</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Tipo:</span>
+                        <span className="text-muted-foreground">Tipo:</span>
                         <span className="font-medium">{selectedCreative.tipo || 'Post'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Criado em:</span>
+                        <span className="text-muted-foreground">Criado em:</span>
                         <span className="font-medium">
                           {format(new Date(selectedCreative.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Enviado por:</span>
+                        <span className="text-muted-foreground">Enviado por:</span>
                         <span className="font-medium">{selectedCreative.uploadedBy.name}</span>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-sm text-gray-500 mb-2">LEGENDA/COPY</h4>
-                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
-                      {selectedCreative.legenda || 'Nenhuma legenda fornecida'}
-                    </p>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">LEGENDA/COPY</h4>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {selectedCreative.legenda || 'Nenhuma legenda fornecida'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -673,10 +703,10 @@ export default function ClientDashboard() {
                   
                   return comentarios.length > 0 ? (
                     <div>
-                      <h4 className="font-medium text-sm text-gray-500 mb-2">COMENTÁRIOS ({comentarios.length})</h4>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-2">COMENTÁRIOS ({comentarios.length})</h4>
                       <div className="space-y-3 max-h-40 overflow-y-auto">
                         {comentarios.map((comentarioItem, index) => (
-                          <div key={comentarioItem.id || index} className="flex gap-3 p-3 bg-gray-50 rounded-lg dark:bg-gray-800">
+                          <div key={comentarioItem.id || index} className="flex gap-3 p-3 bg-muted rounded-lg">
                             <Avatar className="h-8 w-8 flex-shrink-0">
                               <AvatarFallback>
                                 {comentarioItem.autor ? comentarioItem.autor.charAt(0).toUpperCase() : '?'}
@@ -689,7 +719,7 @@ export default function ClientDashboard() {
                                   {format(new Date(comentarioItem.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300">{comentarioItem.texto}</p>
+                              <p className="text-sm text-foreground">{comentarioItem.texto}</p>
                             </div>
                           </div>
                         ))}
@@ -730,7 +760,6 @@ export default function ClientDashboard() {
                             <AlertDialogAction
                               onClick={() => {
                                 handleAprovar(selectedCreative)
-                                setDialogOpen(false)
                               }}
                               disabled={isSubmitting}
                               className="bg-green-600 hover:bg-green-700"
@@ -767,16 +796,15 @@ export default function ClientDashboard() {
                           </div>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => {
-                                handleReprovar(selectedCreative)
-                                setDialogOpen(false)
-                              }}
-                              disabled={isSubmitting || !comentario.trim()}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              {isSubmitting ? 'Reprovando...' : 'Reprovar'}
-                            </AlertDialogAction>
+                                                         <AlertDialogAction
+                               onClick={() => {
+                                 handleReprovar(selectedCreative)
+                               }}
+                               disabled={isSubmitting}
+                               className="bg-red-600 hover:bg-red-700"
+                             >
+                               {isSubmitting ? 'Reprovando...' : 'Reprovar'}
+                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

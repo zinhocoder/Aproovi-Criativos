@@ -4,56 +4,56 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const faqs = [
   {
-    question: "O que é o Aproovi?",
+    question: "O que é a plataforma CCS HUB?",
     answer:
-      "O Aproovi é uma plataforma de aprovação de criativos para agências de marketing e seus clientes. Ela simplifica o processo de revisão, feedback e aprovação de conteúdo para redes sociais e campanhas digitais.",
+      "A CCS HUB é uma plataforma exclusiva da CCS Company para aprovação de criativos. Ela simplifica o processo de revisão, feedback e aprovação de conteúdo para redes sociais e campanhas digitais de nossos clientes.",
   },
   {
     question: "Como funciona o processo de aprovação?",
     answer:
-      "A agência faz upload dos criativos, organiza por cliente e envia para aprovação. Os clientes recebem acesso para visualizar, comentar e aprovar ou solicitar ajustes. Todo o histórico é registrado, facilitando o acompanhamento das alterações.",
+      "Nossa equipe faz upload dos criativos desenvolvidos na plataforma, organiza por projeto e envia para sua aprovação. Você recebe uma notificação, visualiza o material, pode fazer comentários específicos e aprovar ou solicitar ajustes com apenas alguns cliques.",
   },
   {
     question: "Quais tipos de arquivos são suportados?",
     answer:
-      "O Aproovi suporta imagens (JPG, PNG, GIF), vídeos (MP4, MOV), documentos (PDF) e arquivos de design (PSD, AI, Figma). Praticamente qualquer tipo de criativo digital pode ser gerenciado na plataforma.",
+      "A plataforma CCS HUB suporta imagens (JPG, PNG, GIF), vídeos (MP4, MOV), documentos (PDF) e arquivos de design (PSD, AI, Figma). Praticamente qualquer tipo de criativo digital pode ser gerenciado na plataforma.",
   },
   {
-    question: "Quantos usuários posso adicionar?",
+    question: "Posso organizar criativos por projeto?",
     answer:
-      "O número de usuários depende do seu plano. O plano Starter permite 2 usuários, o plano Pro permite 5 usuários, e o plano Enterprise oferece usuários ilimitados. Cada cliente que recebe acesso para aprovação não conta como usuário.",
+      "Sim! A plataforma permite organizar criativos por projeto e empresa, mantendo um histórico completo de todas as aprovações e comentários para cada campanha.",
   },
   {
-    question: "É possível personalizar a plataforma com a marca da minha agência?",
+    question: "O sistema é seguro?",
     answer:
-      "Sim, no plano Enterprise você pode personalizar a plataforma com sua marca, incluindo logo, cores e domínio personalizado, oferecendo uma experiência white-label para seus clientes.",
+      "Absolutamente. Utilizamos criptografia de ponta a ponta, autenticação segura e seguimos as melhores práticas de segurança para proteger seus dados e criativos.",
   },
   {
-    question: "Como funciona o período de teste gratuito?",
+    question: "Como posso acessar a plataforma?",
     answer:
-      "Oferecemos 14 dias de teste gratuito com todas as funcionalidades do plano Pro. Não é necessário cartão de crédito para começar, e você pode fazer upgrade para qualquer plano ao final do período de teste.",
+      "Como cliente da CCS Company, você receberá credenciais de acesso exclusivas para a plataforma CCS HUB. Entre em contato com nossa equipe para solicitar seu acesso.",
   },
   {
-    question: "Posso exportar os dados e criativos da plataforma?",
+    question: "Existe um limite de uploads?",
     answer:
-      "Sim, você pode exportar todos os seus criativos, comentários e histórico de aprovações a qualquer momento. Seus dados sempre pertencem a você.",
+      "Não há limites para nossos clientes. A plataforma CCS HUB oferece capacidade ilimitada para gerenciar todos os seus criativos e projetos.",
   },
   {
-    question: "O Aproovi oferece integrações com outras ferramentas?",
+    question: "Posso exportar relatórios de aprovação?",
     answer:
-      "Sim, oferecemos integrações com ferramentas populares como Slack, Trello, Asana, Google Drive e ferramentas de design como Adobe Creative Cloud e Figma. No plano Enterprise, também oferecemos API para integrações personalizadas.",
+      "Sim! A plataforma oferece relatórios detalhados de aprovações, tempo de resposta e histórico completo de comentários para análise e otimização do processo.",
   },
 ]
 
 export function FaqSection() {
   return (
-    <div className="w-full py-12 md:py-24 lg:py-32">
+    <section id="faq" className="w-full py-12 md:py-24 lg:py-32">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Perguntas Frequentes</h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Tire suas dúvidas sobre a plataforma Aproovi
+              Tire suas dúvidas sobre a plataforma exclusiva CCS HUB
             </p>
           </div>
         </div>
@@ -68,6 +68,6 @@ export function FaqSection() {
           </Accordion>
         </div>
       </div>
-    </div>
+    </section>
   )
 }

@@ -150,7 +150,7 @@ export default function DemoPage() {
 
       <main className="container py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-2">Demonstração do Aproovi</h1>
+          <h1 className="text-3xl font-bold mb-2">Demonstração do CCS HUB</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Experimente como funciona o processo de aprovação de criativos. Adicione comentários, aprove ou reprove o
             criativo abaixo.
@@ -341,7 +341,7 @@ export default function DemoPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-1">Benefícios do Aproovi:</h3>
+                  <h3 className="font-medium mb-1">Benefícios do CCS HUB:</h3>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
                     <li>Processo de aprovação simplificado e centralizado</li>
                     <li>Feedback detalhado com comentários específicos</li>

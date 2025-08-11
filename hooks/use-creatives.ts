@@ -33,6 +33,43 @@ export function useCreatives() {
     }
   }, [toast]);
 
+  // Buscar criativo específico por ID
+  const fetchCreativeById = useCallback(async (id: string) => {
+    try {
+      setError(null);
+      const response = await apiService.getCreativeById(id);
+      
+      if (response.success && response.data) {
+        // Atualizar o criativo na lista local ou adicionar se não existir
+        setCreatives(prev => {
+          const existingIndex = prev.findIndex(c => c.id === id);
+          if (existingIndex >= 0) {
+            // Atualizar criativo existente
+            const updated = [...prev];
+            updated[existingIndex] = response.data!;
+            return updated;
+          } else {
+            // Adicionar novo criativo
+            return [response.data!, ...prev];
+          }
+        });
+        return response.data;
+      } else {
+        setError(response.error || 'Erro ao buscar criativo');
+        return null;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(errorMessage);
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return null;
+    }
+  }, [toast]);
+
   // Upload de criativo
   const uploadCreative = async (file: File, titulo?: string, legenda?: string, tipo?: string, empresaId?: string) => {
     try {
@@ -92,9 +129,9 @@ export function useCreatives() {
   };
 
   // Atualizar status
-  const updateStatus = async (id: string, status: 'pendente' | 'aprovado' | 'reprovado') => {
+  const updateStatus = async (id: string, status: 'pendente' | 'aprovado' | 'reprovado', comentario?: string) => {
     try {
-      const response = await apiService.updateCreativeStatus(id, status);
+      const response = await apiService.updateCreativeStatus(id, status, comentario);
       
       if (response.success && response.data) {
         setCreatives(prev => 
@@ -124,11 +161,11 @@ export function useCreatives() {
   // Adicionar comentário
   const addComment = async (id: string, comentario: string) => {
     try {
-      const response = await apiService.addCreativeComment(id, comentario);
-      
+      const response = await apiService.addCommentToHistory(id, comentario);
+
       if (response.success && response.data) {
-        setCreatives(prev => 
-          prev.map(creative => 
+        setCreatives(prev =>
+          prev.map(creative =>
             creative.id === id ? response.data! : creative
           )
         );
@@ -163,11 +200,16 @@ export function useCreatives() {
       const response = await apiService.addCreativeVersion(id, file);
       
       if (response.success && response.data) {
+        // Atualizar o criativo na lista local com os novos dados
         setCreatives(prev => 
           prev.map(creative => 
             creative.id === id ? response.data! : creative
           )
         );
+        
+        console.log('Criativo atualizado após adicionar versão:', response.data);
+        console.log('Nova URL:', response.data.url);
+        
         toast({
           title: "Sucesso",
           description: response.message || "Nova versão adicionada com sucesso!",
@@ -267,6 +309,8 @@ export function useCreatives() {
         });
         
         return response.data?.comentario; // Retornar o comentário criado
+      } else {
+        throw new Error(response.error || 'Erro ao adicionar comentário');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -284,6 +328,7 @@ export function useCreatives() {
     loading,
     error,
     fetchCreatives,
+    fetchCreativeById,
     uploadCreative,
     uploadMultipleCreative,
     updateStatus,

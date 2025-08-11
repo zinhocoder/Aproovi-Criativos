@@ -22,7 +22,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Bem-vindo à plataforma de aprovação de criativos da Aproovi.</p>
+          <p className="text-muted-foreground">Bem-vindo à plataforma de aprovação de criativos da CCS HUB.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/dashboard/criativos/novo">
@@ -51,7 +51,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">+2 no último mês</p>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-violet-500">
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Criativos</CardTitle>
             <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -274,8 +274,8 @@ export default function DashboardPage() {
               {[
                 { name: "João Silva", role: "Cliente", company: "Drive Experience", lastActive: "Há 5 min" },
                 { name: "Maria Oliveira", role: "Cliente", company: "Tubotecnica", lastActive: "Há 30 min" },
-                { name: "Carlos Santos", role: "Designer", company: "Aproovi", lastActive: "Há 1h" },
-                { name: "Ana Pereira", role: "Gerente", company: "Aproovi", lastActive: "Há 2h" },
+                { name: "Carlos Santos", role: "Designer", company: "CCS HUB", lastActive: "Há 1h" },
+                { name: "Ana Pereira", role: "Gerente", company: "CCS HUB", lastActive: "Há 2h" },
                 { name: "Roberto Lima", role: "Cliente", company: "Empresa ABC", lastActive: "Há 2h" },
                 { name: "Roberto Lima", role: "Cliente", company: "Empresa ABC", lastActive: "Há 3h" },
               ].map((user, index) => (

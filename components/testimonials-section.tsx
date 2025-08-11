@@ -4,52 +4,39 @@ import { Star } from "lucide-react"
 
 const testimonials = [
   {
-    name: "Mariana Silva",
-    role: "Diretora de Marketing, Agência Impulso",
-    avatar: "/testimonials/avatar-1.jpg",
     content:
-      "O Aproovi revolucionou nosso fluxo de trabalho. Antes, passávamos horas trocando emails com clientes sobre aprovações. Agora, todo o processo é centralizado e transparente. Economizamos pelo menos 10 horas por semana!",
-    rating: 5,
+      "O CCS HUB revolucionou nosso fluxo de trabalho. Antes, passávamos horas trocando emails com clientes sobre aprovações. Agora, todo o processo é centralizado e transparente. Economizamos pelo menos 10 horas por semana!",
+    author: "Mariana Costa",
+    role: "Diretora de Marketing",
+    company: "Agência Digital Plus",
   },
   {
-    name: "Carlos Mendes",
-    role: "CEO, Mendes Digital",
-    avatar: "/testimonials/avatar-2.jpg",
     content:
-      "Como agência que atende mais de 20 clientes, o Aproovi se tornou indispensável. A organização por cliente e a facilidade de acompanhar o status de cada criativo nos deu um novo nível de profissionalismo.",
-    rating: 5,
+      "Como agência que atende mais de 20 clientes, o CCS HUB se tornou indispensável. A organização por cliente e a facilidade de acompanhar o status de cada criativo nos deu um novo nível de profissionalismo.",
+    author: "Roberto Silva",
+    role: "CEO",
+    company: "Studio Criativo",
   },
   {
-    name: "Juliana Costa",
-    role: "Gerente de Marketing, TechBrasil",
-    avatar: "/testimonials/avatar-3.jpg",
     content:
-      "Como cliente de uma agência que usa o Aproovi, posso dizer que a experiência é excelente. Consigo ver todos os criativos em um só lugar, fazer comentários específicos e aprovar com um clique. Muito melhor que o caos de emails!",
-    rating: 5,
+      "Como cliente de uma agência que usa o CCS HUB, posso dizer que a experiência é excelente. Consigo ver todos os criativos em um só lugar, fazer comentários específicos e aprovar com um clique. Muito melhor que o caos de emails!",
+    author: "Ana Paula Santos",
+    role: "Marketing Manager",
+    company: "Empresa XYZ",
   },
   {
-    name: "Roberto Almeida",
-    role: "Diretor Criativo, Studio Visual",
-    avatar: "/testimonials/avatar-4.jpg",
     content:
-      "A funcionalidade de comentários em pontos específicos da imagem é um diferencial incrível. Não há mais confusão sobre qual elemento o cliente está se referindo. Isso reduziu drasticamente o número de revisões necessárias.",
-    rating: 4,
+      "Gerencio o conteúdo de 8 clientes diferentes e o CCS HUB tornou minha vida muito mais fácil. O histórico completo de aprovações e comentários me salvou em várias reuniões quando precisei justificar decisões de design.",
+    author: "Carlos Mendes",
+    role: "Designer Sênior",
+    company: "Agência Visual",
   },
   {
-    name: "Fernanda Oliveira",
-    role: "Social Media Manager, Conecta Digital",
-    avatar: "/testimonials/avatar-5.jpg",
     content:
-      "Gerencio o conteúdo de 8 clientes diferentes e o Aproovi tornou minha vida muito mais fácil. O histórico completo de aprovações e comentários me salvou em várias reuniões quando precisei justificar decisões de design.",
-    rating: 5,
-  },
-  {
-    name: "Lucas Santos",
-    role: "Fundador, Agência Nexus",
-    avatar: "/testimonials/avatar-6.jpg",
-    content:
-      "Implementamos o Aproovi há 6 meses e já vimos um aumento de 30% na eficiência da equipe. O tempo de aprovação dos criativos caiu pela metade e a satisfação dos clientes aumentou significativamente.",
-    rating: 5,
+      "Implementamos o CCS HUB há 6 meses e já vimos um aumento de 30% na eficiência da equipe. O tempo de aprovação dos criativos caiu pela metade e a satisfação dos clientes aumentou significativamente.",
+    author: "Fernanda Lima",
+    role: "Gerente de Projetos",
+    company: "Marketing Solutions",
   },
 ]
 
@@ -59,9 +46,9 @@ export function TestimonialsSection() {
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">O que nossos clientes dizem</h2>
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Depoimentos</h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Depoimentos reais de agências e clientes que utilizam o Aproovi
+              Depoimentos reais de agências e clientes que utilizam o CCS HUB
             </p>
           </div>
         </div>
@@ -71,19 +58,19 @@ export function TestimonialsSection() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar>
-                    <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                    <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.name} />
+                    <AvatarFallback>{testimonial.author.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={`/testimonials/avatar-${index + 1}.jpg`} alt={testimonial.author} />
                   </Avatar>
                   <div>
-                    <h3 className="font-medium">{testimonial.name}</h3>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                    <h3 className="font-medium">{testimonial.author}</h3>
+                    <p className="text-sm text-muted-foreground">{testimonial.role} - {testimonial.company}</p>
                   </div>
                 </div>
                 <div className="flex mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${i < testimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                      className={`h-4 w-4 ${i < 5 ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
                     />
                   ))}
                 </div>

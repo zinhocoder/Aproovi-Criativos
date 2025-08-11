@@ -26,7 +26,7 @@ import {
   History
 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { apiService } from "@/lib/api"
 
 export default function CriativoDetalhesPage() {
   const params = useParams()
@@ -56,7 +57,9 @@ export default function CriativoDetalhesPage() {
     addCreativeVersion, 
     deleteCreative, 
     updateCreativeImage, 
-    addCommentToHistory 
+    addCommentToHistory,
+    fetchCreatives,
+    fetchCreativeById
   } = useCreatives()
   const criativoId = params.id as string
   
@@ -70,18 +73,55 @@ export default function CriativoDetalhesPage() {
   const [isUploadingVersion, setIsUploadingVersion] = useState(false)
   const [comentarios, setComentarios] = useState<Comment[]>([]) // Histórico de comentários
   const [isUpdatingImage, setIsUpdatingImage] = useState(false)
+  const [isLoadingCreative, setIsLoadingCreative] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   // Encontrar o criativo pelo ID
   const criativo = creatives.find(c => c.id === criativoId)
 
+  // Função para buscar dados atualizados do criativo
+  const fetchCreativeDetails = useCallback(async () => {
+    if (!criativoId) return
+    
+    try {
+      setIsLoadingCreative(true)
+      console.log('Buscando criativo por ID:', criativoId)
+      // Buscar criativo específico por ID
+      const result = await fetchCreativeById(criativoId)
+      console.log('Resultado da busca:', result)
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do criativo:', error)
+    } finally {
+      setIsLoadingCreative(false)
+    }
+  }, [criativoId, fetchCreativeById])
+
+  // Buscar dados do criativo quando a página carrega
+  useEffect(() => {
+    // Sempre buscar dados atualizados do criativo quando a página carrega
+    fetchCreativeDetails()
+  }, [criativoId]) // Remover fetchCreativeDetails da dependência para evitar loop
+
+  // Debug: log do criativo atual
+  useEffect(() => {
+    if (criativo) {
+      console.log('Criativo atualizado:', criativo)
+      console.log('URL atual:', criativo.url)
+      console.log('Comentários:', criativo.comentarios)
+      console.log('Comentário antigo:', criativo.comentario)
+    }
+  }, [criativo])
+
   // Inicializar dados quando o criativo for carregado
   useEffect(() => {
     if (criativo) {
-      // Inicializar legenda e copy
+      console.log('Inicializando dados do criativo:', criativo.id)
+      console.log('Criativo completo:', criativo)
+      
+      // Inicializar legenda
       setLegenda(criativo.legenda || "")
-      setCopy(criativo.copy || "")
+      setCopy("") // Remover referência a criativo.copy
       
       // Para carrosséis, mostrar todas as imagens do campo 'arquivos'
       let imagensCarrossel = [criativo.url] // Sempre incluir a imagem principal
@@ -114,16 +154,48 @@ export default function CriativoDetalhesPage() {
       setVersoes(imagensCarrossel)
       
       // Carregar histórico de comentários
+      console.log('Tentando carregar comentários:', criativo.comentarios)
+      console.log('Tipo de comentários:', typeof criativo.comentarios)
+      
+      let comentariosArray: Comment[] = []
+      
       if (criativo.comentarios) {
         try {
           const comentariosData = JSON.parse(criativo.comentarios)
+          console.log('Comentários parseados:', comentariosData)
+          console.log('Tipo dos comentários parseados:', typeof comentariosData)
+          console.log('É array?', Array.isArray(comentariosData))
+          
           if (Array.isArray(comentariosData)) {
-            setComentarios(comentariosData)
+            comentariosArray = comentariosData
+            console.log('Comentários carregados com sucesso:', comentariosArray)
+          } else {
+            console.log('Comentários não são um array:', comentariosData)
+            comentariosArray = []
           }
         } catch (error) {
           console.error('Erro ao parsear comentários:', error)
+          comentariosArray = []
         }
+      } else {
+        console.log('Nenhum comentário encontrado no criativo')
+        comentariosArray = []
       }
+      
+      // Verificar se há comentário antigo (compatibilidade)
+      if (criativo.comentario && comentariosArray.length === 0) {
+        console.log('Encontrado comentário antigo:', criativo.comentario)
+        comentariosArray = [{
+          id: 'legacy-comment',
+          texto: criativo.comentario,
+          autor: criativo.uploadedBy?.name || 'Usuário',
+          autorId: criativo.uploadedById || 'unknown',
+          createdAt: criativo.createdAt
+        }]
+      }
+      
+      setComentarios(comentariosArray)
+      console.log('Comentários finais definidos:', comentariosArray)
     }
   }, [criativo])
 
@@ -200,25 +272,31 @@ export default function CriativoDetalhesPage() {
   const handleReprovar = async () => {
     if (!criativo) return
 
+    // Verificar se há comentário quando reprovar
+    if (!comentario.trim()) {
+      toast({
+        title: "Comentário obrigatório",
+        description: "É obrigatório escrever um comentário ao reprovar um criativo",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      await updateStatus(criativo.id, 'reprovado')
+      await updateStatus(criativo.id, 'reprovado', comentario)
+      setComentario("")
 
-      if (comentario.trim()) {
-        await addComment(criativo.id, comentario)
-        setComentario("")
-      }
-
-        toast({
+      toast({
         title: "Criativo reprovado",
         description: "O criativo foi reprovado.",
-        })
+      })
     } catch (error) {
       console.error('Erro ao reprovar criativo:', error)
       // O erro já é tratado no hook useCreatives
     } finally {
-        setIsSubmitting(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -280,21 +358,59 @@ export default function CriativoDetalhesPage() {
         const file = files[i]
         
         // Usar a API real para adicionar versão
-        await addCreativeVersion(criativo.id, file)
+        const updatedCreative = await addCreativeVersion(criativo.id, file)
         
-        // Atualizar a lista local de versões também
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          setVersoes(prev => [...prev, reader.result as string])
-        }
-        reader.readAsDataURL(file)
+        // Atualizar o criativo local com os novos dados
+        if (updatedCreative) {
+          // Atualizar o estado local com os novos dados
+          setVersoes(prev => {
+            const novasVersoes: string[] = []
+            
+            // Adicionar imagem principal atualizada (nova versão)
+            novasVersoes.push(updatedCreative.url)
+            
+            // Adicionar arquivos do carrossel se existirem
+            if (updatedCreative.arquivos) {
+              try {
+                const arquivosData = JSON.parse(updatedCreative.arquivos)
+                if (Array.isArray(arquivosData)) {
+                  arquivosData.forEach(arquivo => {
+                    if (arquivo.url && arquivo.url !== updatedCreative.url) {
+                      novasVersoes.push(arquivo.url)
+                    }
+                  })
+                }
+              } catch (error) {
+                console.error('Erro ao parsear arquivos do carrossel:', error)
+              }
+            }
+            
+            // Adicionar versões adicionais se existirem
+            if (updatedCreative.versoes) {
+              try {
+                const versoesData = JSON.parse(updatedCreative.versoes)
+                if (Array.isArray(versoesData)) {
+                  versoesData.forEach(versao => {
+                    if (versao.url && versao.url !== updatedCreative.url) {
+                      novasVersoes.push(versao.url)
+                    }
+                  })
+                }
+              } catch (error) {
+                console.error('Erro ao parsear versões:', error)
+              }
+            }
+            
+            return novasVersoes
+          })
 
-        // Mostrar progresso para cada arquivo
-        const numeroVersao = versoes.length + i + 1 // Calcular número da versão baseado no total atual
-        toast({
-          title: `Versão V${numeroVersao} adicionada`,
-          description: `${file.name} foi adicionado como nova versão.`,
-        })
+          // Mostrar progresso para cada arquivo
+          const numeroVersao = i + 1
+          toast({
+            title: `Versão V${numeroVersao} adicionada`,
+            description: `${file.name} foi adicionado como nova versão.`,
+          })
+        }
       }
 
       if (files.length > 1) {
@@ -383,12 +499,16 @@ export default function CriativoDetalhesPage() {
     setIsSubmitting(true)
 
     try {
+      console.log('Adicionando comentário ao histórico:', comentario)
       const novoComentario = await addCommentToHistory(criativo.id, comentario)
       
       if (novoComentario) {
-        // Adicionar à lista local
-        setComentarios(prev => [...prev, novoComentario])
+        console.log('Novo comentário criado:', novoComentario)
+        // Recarregar dados do criativo para garantir sincronização
+        await fetchCreativeDetails()
         setComentario("")
+      } else {
+        console.log('Nenhum comentário retornado da API')
       }
     } catch (error) {
       console.error('Erro ao adicionar comentário:', error)
@@ -399,8 +519,8 @@ export default function CriativoDetalhesPage() {
 
   // Se não encontrou o criativo
   if (!criativo) {
-  return (
-    <div className="space-y-6">
+    return (
+      <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/criativos">
             <Button variant="ghost" size="sm">
@@ -409,10 +529,19 @@ export default function CriativoDetalhesPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Criativo não encontrado</h1>
-            <p className="text-muted-foreground">O criativo solicitado não foi encontrado.</p>
-            </div>
+            {isLoadingCreative ? (
+              <>
+                <h1 className="text-3xl font-bold tracking-tight">Carregando...</h1>
+                <p className="text-muted-foreground">Buscando dados do criativo.</p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold tracking-tight">Criativo não encontrado</h1>
+                <p className="text-muted-foreground">O criativo solicitado não foi encontrado.</p>
+              </>
+            )}
           </div>
+        </div>
       </div>
     )
   }

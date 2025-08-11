@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Aproovi - Plataforma de Aprovação",
-  description: "Simplifique o processo de aprovação de criativos para social media",
+  title: "CCS HUB - Plataforma de Aprovação",
+  description: "Simplificando a aprovação de criativos para agências e clientes",
 }
 
 export default function RootLayout({

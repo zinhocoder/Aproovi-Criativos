@@ -13,10 +13,12 @@ import {
   User,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  BookOpen
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useClientCompany } from '@/hooks/use-client-company'
+import { useAulas } from '@/hooks/use-aulas'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export function ClientSidebar() {
@@ -24,6 +26,7 @@ export function ClientSidebar() {
   const router = useRouter()
   const { user, logout } = useAuth()
   const { company, loading } = useClientCompany()
+  const { getTotalProgress, getCompletedVideosCount, getTotalVideosCount } = useAulas()
 
   const handleLogout = () => {
     logout()
@@ -36,6 +39,12 @@ export function ClientSidebar() {
       href: '/cliente',
       icon: ImageIcon,
       current: pathname === '/cliente'
+    },
+    {
+      name: 'Aulas',
+      href: '/cliente/aulas',
+      icon: BookOpen,
+      current: pathname === '/cliente/aulas'
     }
   ]
 
@@ -58,8 +67,8 @@ export function ClientSidebar() {
       <div className="w-64 bg-background border-r border-border flex flex-col">
         <div className="p-6">
           <div className="text-center">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-sm text-gray-500">Empresa não encontrada</p>
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground">Empresa não encontrada</p>
           </div>
         </div>
       </div>
@@ -69,7 +78,7 @@ export function ClientSidebar() {
   return (
     <div className="w-64 bg-background border-r border-border flex flex-col">
       {/* Header da Empresa */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           {company.logo ? (
             <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
@@ -80,12 +89,12 @@ export function ClientSidebar() {
               />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Building2 className="h-6 w-6 text-gray-400" />
+            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <Building2 className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-gray-900 truncate">
+            <h2 className="text-lg font-semibold text-foreground truncate">
               {company.nome}
             </h2>
             <Badge variant={company.ativa ? "default" : "secondary"} className="text-xs">
@@ -94,7 +103,7 @@ export function ClientSidebar() {
           </div>
         </div>
         {company.descricao && (
-          <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
             {company.descricao}
           </p>
         )}
@@ -116,10 +125,34 @@ export function ClientSidebar() {
             >
               <Icon className="h-5 w-5" />
               {item.name}
+              {item.name === 'Aulas' && (
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  {getCompletedVideosCount()}/{getTotalVideosCount()}
+                </Badge>
+              )}
             </Link>
           )
         })}
       </nav>
+
+      {/* Progresso das Aulas */}
+      <div className="p-4 border-t border-border">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Progresso das Aulas</span>
+            <span className="font-medium">{Math.round(getTotalProgress())}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${getTotalProgress()}%` }}
+            />
+          </div>
+          <div className="text-xs text-muted-foreground text-center">
+            {getCompletedVideosCount()} de {getTotalVideosCount()} aulas concluídas
+          </div>
+        </div>
+      </div>
 
       {/* Estatísticas serão calculadas dinamicamente no dashboard principal */}
 

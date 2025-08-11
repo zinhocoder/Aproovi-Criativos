@@ -83,14 +83,11 @@ export function useAuth() {
   };
 
   // Registro
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, userType: 'agency' | 'client' = 'agency', accessKey?: string) => {
     try {
       setLoading(true);
       
-      // Obter tipo de usuário do localStorage
-      const userType = localStorage.getItem('userType') || 'agency';
-      
-      const response = await apiService.register(name, email, password, userType as 'agency' | 'client');
+      const response = await apiService.register(name, email, password, userType, accessKey);
       
       if (response.success && response.data) {
         const { token, user: userData } = response.data;

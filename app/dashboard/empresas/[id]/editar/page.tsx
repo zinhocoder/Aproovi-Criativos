@@ -183,6 +183,18 @@ export default function EditarEmpresaPage() {
                       Informações adicionais sobre a empresa
                     </p>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label>E-mail do Cliente</Label>
+                    <Input
+                      value={empresa.clienteEmail}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      O e-mail do cliente não pode ser alterado após a criação da empresa
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

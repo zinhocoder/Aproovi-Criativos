@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,8 +23,10 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [accessKey, setAccessKey] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showAccessKey, setShowAccessKey] = useState(false)
   const [registerType, setRegisterType] = useState<"agency" | "client">("agency")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailValidation, setEmailValidation] = useState<{
@@ -31,10 +34,45 @@ export default function RegisterPage() {
     valid: boolean | null
     message: string
   }>({ checking: false, valid: null, message: "" })
+  const [accessKeyValidation, setAccessKeyValidation] = useState<{
+    checking: boolean
+    valid: boolean | null
+    message: string
+  }>({ checking: false, valid: null, message: "" })
 
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { register, loading } = useAuth()
+
+  // Ler parâmetros da URL para preenchimento automático
+  useEffect(() => {
+    const urlEmail = searchParams.get('email')
+    const urlUserType = searchParams.get('userType') as 'agency' | 'client' | null
+    
+    if (urlEmail) {
+      setEmail(urlEmail)
+    }
+    
+    if (urlUserType && (urlUserType === 'agency' || urlUserType === 'client')) {
+      setRegisterType(urlUserType)
+      
+      // Se for cliente e tiver e-mail, verificar automaticamente
+      if (urlUserType === 'client' && urlEmail) {
+        checkEmailForClient(urlEmail)
+      }
+    }
+  }, [searchParams])
+
+  // Garantir que o e-mail do convite não seja alterado
+  useEffect(() => {
+    const urlEmail = searchParams.get('email')
+    const urlUserType = searchParams.get('userType')
+    
+    if (urlEmail && urlUserType === 'client') {
+      setEmail(urlEmail)
+    }
+  }, [searchParams])
 
   // Verificar se o e-mail está registrado em uma empresa (para clientes)
   const checkEmailForClient = async (email: string) => {
@@ -55,7 +93,7 @@ export default function RegisterPage() {
         setEmailValidation({
           checking: false,
           valid: false,
-          message: "Este e-mail não está registrado em nenhuma empresa. Entre em contato com sua agência."
+          message: "Este e-mail não está registrado em nenhuma empresa. Entre em contato com sua agência para solicitar acesso."
         })
       }
     } catch (error) {
@@ -67,14 +105,80 @@ export default function RegisterPage() {
     }
   }
 
+  // Verificar chave de acesso para agências
+  const checkAccessKeyForAgency = async (key: string) => {
+    if (registerType !== 'agency' || !key) return
+
+    setAccessKeyValidation({ checking: true, valid: null, message: "" })
+
+    try {
+      const response = await apiService.checkAgencyRegistration(key)
+      
+      if (response.success && response.available) {
+        setAccessKeyValidation({
+          checking: false,
+          valid: true,
+          message: "✅ Chave de acesso válida! Você pode prosseguir com o registro."
+        })
+      } else {
+        setAccessKeyValidation({
+          checking: false,
+          valid: false,
+          message: "Chave de acesso inválida. Verifique se digitou corretamente ou solicite uma nova chave."
+        })
+      }
+    } catch (error) {
+      setAccessKeyValidation({
+        checking: false,
+        valid: false,
+        message: "Erro ao verificar chave de acesso. Tente novamente."
+      })
+    }
+  }
+
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value
+    
+    // Se o usuário acessou via convite, não permitir alterar o e-mail
+    if (searchParams.get('email') && searchParams.get('userType') === 'client') {
+      const originalEmail = searchParams.get('email')
+      if (newEmail !== originalEmail) {
+        setEmail(originalEmail || '')
+        toast({
+          title: "E-mail não pode ser alterado",
+          description: "O e-mail do convite não pode ser modificado.",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+    
     setEmail(newEmail)
     
     // Verificar e-mail para clientes após 1 segundo de inatividade
     if (registerType === 'client' && newEmail.includes('@')) {
       const timeoutId = setTimeout(() => {
         checkEmailForClient(newEmail)
+      }, 1000)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }
+
+  const handleAccessKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newKey = e.target.value
+    setAccessKey(newKey)
+    
+    // Reset validation when clearing the field
+    if (!newKey.trim()) {
+      setAccessKeyValidation({ checking: false, valid: null, message: "" })
+      return
+    }
+    
+    // Verificar chave de acesso para agências após 1 segundo de inatividade
+    if (registerType === 'agency' && newKey.length > 0) {
+      const timeoutId = setTimeout(() => {
+        checkAccessKeyForAgency(newKey)
       }, 1000)
       
       return () => clearTimeout(timeoutId)
@@ -115,8 +219,8 @@ export default function RegisterPage() {
     if (registerType === 'client') {
       if (emailValidation.valid === false) {
         toast({
-          title: "E-mail não autorizado",
-          description: emailValidation.message,
+          title: "📧 E-mail não autorizado",
+          description: "Este e-mail não está registrado em nenhuma empresa. Entre em contato com sua agência para solicitar acesso.",
           variant: "destructive",
         })
         return
@@ -124,8 +228,38 @@ export default function RegisterPage() {
       
       if (emailValidation.valid === null) {
         toast({
-          title: "Verificando e-mail",
-          description: "Aguarde a verificação do e-mail.",
+          title: "⏳ Verificando e-mail",
+          description: "Aguarde enquanto verificamos seu e-mail...",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
+    // Para agências, verificar se a chave de acesso é válida
+    if (registerType === 'agency') {
+      if (!accessKey.trim()) {
+        toast({
+          title: "🔐 Chave de acesso obrigatória",
+          description: "Para registrar uma agência, você precisa de uma chave de acesso válida. Entre em contato com a administração.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      if (accessKeyValidation.valid === false) {
+        toast({
+          title: "❌ Chave de acesso inválida",
+          description: "A chave de acesso fornecida não é válida. Verifique se digitou corretamente ou solicite uma nova chave.",
+          variant: "destructive",
+        })
+        return
+      }
+      
+      if (accessKeyValidation.valid === null) {
+        toast({
+          title: "⏳ Verificando chave de acesso",
+          description: "Aguarde enquanto verificamos sua chave de acesso...",
           variant: "destructive",
         })
         return
@@ -135,10 +269,12 @@ export default function RegisterPage() {
     try {
       setIsSubmitting(true)
       
-      // Salvar o tipo de usuário no localStorage
-      localStorage.setItem("userType", registerType)
+      // Garantir que o e-mail do convite seja usado
+      const finalEmail = (searchParams.get('email') && searchParams.get('userType') === 'client') 
+        ? searchParams.get('email')! 
+        : email
       
-      await register(name, email, password)
+      await register(name, finalEmail, password, registerType, registerType === 'agency' ? accessKey : undefined)
       
       toast({
         title: "Conta criada com sucesso",
@@ -155,7 +291,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-violet-50 dark:bg-violet-950/20">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-blue-50 dark:bg-blue-950/20">
       <div className="absolute top-8 right-8">
         <ThemeToggle />
       </div>
@@ -178,6 +314,15 @@ export default function RegisterPage() {
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold">Criar conta</h1>
           <p className="text-muted-foreground text-sm">Preencha os dados para criar sua conta</p>
+          
+          {/* Mensagem especial para convites */}
+          {searchParams.get('email') && searchParams.get('userType') === 'client' && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <AlertDescription className="text-blue-800">
+                🎉 Você foi convidado para acessar a plataforma! Seu e-mail foi preenchido automaticamente.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <Card className="w-full">
@@ -189,10 +334,12 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             <Tabs
-              defaultValue="agency"
+              defaultValue={searchParams.get('userType') || "agency"}
               onValueChange={(value) => {
                 setRegisterType(value as "agency" | "client")
                 setEmailValidation({ checking: false, valid: null, message: "" })
+                setAccessKeyValidation({ checking: false, valid: null, message: "" })
+                setAccessKey("")
               }}
               className="w-full mb-6"
             >
@@ -205,6 +352,8 @@ export default function RegisterPage() {
                 <div className="text-sm text-muted-foreground mb-4 p-2 bg-muted/50 rounded-md">
                   Como agência, você terá acesso completo à plataforma, incluindo gerenciamento de empresas, criativos,
                   calendário e relatórios.
+                  <br />
+                  <strong>🔐 Chave de acesso obrigatória - Entre em contato com a administração para obter sua chave.</strong>
                 </div>
               </TabsContent>
 
@@ -239,8 +388,14 @@ export default function RegisterPage() {
                   value={email}
                   onChange={handleEmailChange}
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || (searchParams.get('email') && searchParams.get('userType') === 'client')}
+                  className={searchParams.get('email') && searchParams.get('userType') === 'client' ? 'bg-muted' : ''}
                 />
+                {searchParams.get('email') && searchParams.get('userType') === 'client' && (
+                  <p className="text-sm text-muted-foreground">
+                    🔒 E-mail do convite - não pode ser alterado
+                  </p>
+                )}
                 
                 {/* Validação de e-mail para clientes */}
                 {registerType === 'client' && email && (
@@ -268,6 +423,64 @@ export default function RegisterPage() {
                   </div>
                 )}
               </div>
+
+              {/* Campo de chave de acesso para agências */}
+              {registerType === 'agency' && (
+                <div className="space-y-2">
+                  <Label htmlFor="accessKey">Chave de acesso</Label>
+                  <div className="relative">
+                                         <Input
+                       id="accessKey"
+                       type={showAccessKey ? "text" : "password"}
+                       placeholder="Cole aqui a chave de acesso fornecida"
+                       value={accessKey}
+                       onChange={handleAccessKeyChange}
+                       required
+                       disabled={isSubmitting}
+                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowAccessKey(!showAccessKey)}
+                      disabled={isSubmitting}
+                    >
+                      {showAccessKey ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Validação de chave de acesso para agências */}
+                  {accessKey && (
+                    <div className="mt-2">
+                      {accessKeyValidation.checking ? (
+                        <Alert>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <AlertDescription>
+                            Verificando chave de acesso...
+                          </AlertDescription>
+                        </Alert>
+                      ) : accessKeyValidation.valid === true ? (
+                        <Alert className="border-green-200 bg-green-50">
+                          <AlertDescription className="text-green-800">
+                            ✅ {accessKeyValidation.message}
+                          </AlertDescription>
+                        </Alert>
+                      ) : accessKeyValidation.valid === false ? (
+                        <Alert className="border-red-200 bg-red-50">
+                          <AlertDescription className="text-red-800">
+                            ❌ {accessKeyValidation.message}
+                          </AlertDescription>
+                        </Alert>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
@@ -330,7 +543,12 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting || loading || (registerType === 'client' && emailValidation.valid === false)}
+                disabled={
+                  isSubmitting || 
+                  loading || 
+                  (registerType === 'client' && emailValidation.valid === false) ||
+                  (registerType === 'agency' && accessKeyValidation.valid === false)
+                }
               >
                 {isSubmitting || loading ? (
                   <>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,7 +19,9 @@ import {
   ImageIcon,
   Video,
   FileText,
-  Play
+  Play,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -46,144 +48,174 @@ interface Comment {
   createdAt: string
 }
 
+interface Version {
+  url: string
+  filename: string
+  order?: number
+}
+
 export default function ClienteCriativoDetalhes() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  const { updateStatus, addComment } = useCreatives()
+  const { updateStatus, addComment, fetchCreativeById } = useCreatives()
   
   const [criativo, setCriativo] = useState<Creative | null>(null)
   const [loading, setLoading] = useState(true)
   const [comentarios, setComentarios] = useState<Comment[]>([])
-  const [versoes, setVersoes] = useState<any[]>([])
+  const [versoes, setVersoes] = useState<Version[]>([])
+  const [imagemAtual, setImagemAtual] = useState<string>('')
+  const [indiceAtual, setIndiceAtual] = useState(0)
   const [novoComentario, setNovoComentario] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const id = params.id as string
 
+  // Função para buscar detalhes do criativo
+  const fetchCreativeDetails = useCallback(async () => {
+    if (!id) return
+    
+    try {
+      const response = await fetchCreativeById(id)
+      if (response) {
+        setCriativo(response)
+        setImagemAtual(response.url)
+        
+        // Carregar comentários
+        let comentariosArray: Comment[] = []
+        
+        if (response.comentarios) {
+          try {
+            const comentariosData = JSON.parse(response.comentarios)
+            if (Array.isArray(comentariosData)) {
+              comentariosArray = comentariosData
+            }
+          } catch (error) {
+            console.error('Erro ao parsear comentários:', error)
+          }
+        }
+        
+        // Se não há comentários múltiplos, verificar comentário único (compatibilidade)
+        if (comentariosArray.length === 0 && response.comentario) {
+          comentariosArray = [{
+            id: '1',
+            texto: response.comentario,
+            autor: response.uploadedBy?.name || 'Sistema',
+            createdAt: response.updatedAt || response.createdAt
+          }]
+        }
+        
+        setComentarios(comentariosArray)
+        
+        // Carregar versões
+        const todasVersoes: Version[] = []
+        
+        if (response.versoes) {
+          try {
+            const versoesData = JSON.parse(response.versoes)
+            if (Array.isArray(versoesData)) {
+              todasVersoes.push(...versoesData)
+            }
+          } catch (error) {
+            console.error('Erro ao parsear versões:', error)
+          }
+        }
+        
+        if (response.arquivos) {
+          try {
+            const arquivosData = JSON.parse(response.arquivos)
+            if (Array.isArray(arquivosData)) {
+              todasVersoes.push(...arquivosData)
+            }
+          } catch (error) {
+            console.error('Erro ao parsear arquivos:', error)
+          }
+        }
+        
+        setVersoes(todasVersoes)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do criativo:', error)
+    }
+  }, [id, fetchCreativeById])
+
   // Buscar dados do criativo
   useEffect(() => {
-    const fetchCriativo = async () => {
-      try {
-        setLoading(true)
-        const token = localStorage.getItem('token')
-        
-        if (!token) {
-          toast({
-            title: "Erro",
-            description: "Token de autenticação não encontrado",
-            variant: "destructive",
-          })
-          router.push('/login')
-          return
-        }
-        
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://aproovi-backend-wandering-violet-6242.fly.dev'}/api/creatives/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          setCriativo(data.data)
-          
-          // Carregar comentários
-          if (data.data.comentarios) {
-            try {
-              const comentariosData = JSON.parse(data.data.comentarios)
-              if (Array.isArray(comentariosData)) {
-                setComentarios(comentariosData)
-              }
-            } catch (error) {
-              console.error('Erro ao parsear comentários:', error)
-            }
-          }
-          
-          // Carregar versões
-          if (data.data.versoes) {
-            try {
-              const versoesData = JSON.parse(data.data.versoes)
-              if (Array.isArray(versoesData)) {
-                setVersoes(versoesData)
-              }
-            } catch (error) {
-              console.error('Erro ao parsear versões:', error)
-            }
-          }
-          
-          // Carregar arquivos do carrossel
-          if (data.data.arquivos) {
-            try {
-              const arquivosData = JSON.parse(data.data.arquivos)
-              if (Array.isArray(arquivosData)) {
-                setVersoes(prev => [...prev, ...arquivosData])
-              }
-            } catch (error) {
-              console.error('Erro ao parsear arquivos:', error)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao buscar criativo:', error)
-        
-        if (error instanceof Error) {
-          if (error.message.includes('Unexpected token')) {
-            toast({
-              title: "Erro",
-              description: "Erro de comunicação com o servidor. Verifique se você está logado.",
-              variant: "destructive",
-            })
-            router.push('/login')
-          } else {
-            toast({
-              title: "Erro",
-              description: `Erro ao carregar criativo: ${error.message}`,
-              variant: "destructive",
-            })
-          }
-        } else {
-          toast({
-            title: "Erro",
-            description: "Erro desconhecido ao carregar criativo",
-            variant: "destructive",
-          })
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-
     if (id) {
-      fetchCriativo()
+      setLoading(true)
+      fetchCreativeDetails().finally(() => {
+        setLoading(false)
+      })
     }
-  }, [id, toast])
+  }, [id, fetchCreativeDetails])
+
+  // Função para navegar entre versões
+  const navegarVersao = (direcao: 'anterior' | 'proximo') => {
+    const totalVersoes = 1 + versoes.length // Imagem principal + versões
+    let novoIndice = indiceAtual
+    
+    if (direcao === 'anterior') {
+      novoIndice = indiceAtual > 0 ? indiceAtual - 1 : totalVersoes - 1
+    } else {
+      novoIndice = indiceAtual < totalVersoes - 1 ? indiceAtual + 1 : 0
+    }
+    
+    setIndiceAtual(novoIndice)
+    
+    // Definir imagem atual
+    if (novoIndice === 0) {
+      // Imagem principal
+      setImagemAtual(criativo?.url || '')
+    } else {
+      // Versão específica
+      const versao = versoes[novoIndice - 1]
+      setImagemAtual(versao.url)
+    }
+  }
+
+  // Função para selecionar versão específica
+  const selecionarVersao = (index: number) => {
+    setIndiceAtual(index)
+    if (index === 0) {
+      setImagemAtual(criativo?.url || '')
+    } else {
+      const versao = versoes[index - 1]
+      setImagemAtual(versao.url)
+    }
+  }
 
   const handleAprovar = async () => {
     if (!criativo) return
     
     setIsSubmitting(true)
     try {
-      await updateStatus(criativo.id, 'aprovado')
+      const response = await updateStatus(criativo.id, 'aprovado', novoComentario)
       
-      if (novoComentario.trim()) {
-        await addComment(criativo.id, novoComentario)
-        setNovoComentario('')
+      if (response) {
+        setCriativo(response)
+        
+        // Atualizar imagem atual para refletir a nova URL principal
+        setImagemAtual(response.url)
+        
+        // Atualizar comentários localmente
+        if (response.comentarios) {
+          try {
+            const comentariosData = JSON.parse(response.comentarios)
+            if (Array.isArray(comentariosData)) {
+              setComentarios(comentariosData)
+            }
+          } catch (error) {
+            console.error('Erro ao parsear comentários:', error)
+          }
+        }
       }
+      
+      setNovoComentario('')
       
       toast({
         title: "Sucesso",
         description: "Criativo aprovado com sucesso!",
       })
-      
-      // Recarregar dados
-      window.location.reload()
       
     } catch (error) {
       toast({
@@ -199,22 +231,45 @@ export default function ClienteCriativoDetalhes() {
   const handleReprovar = async () => {
     if (!criativo) return
     
+    // Verificar se há comentário quando reprovar
+    if (!novoComentario.trim()) {
+      toast({
+        title: "Comentário obrigatório",
+        description: "É obrigatório escrever um comentário ao reprovar um criativo",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsSubmitting(true)
     try {
-      await updateStatus(criativo.id, 'reprovado')
+      const response = await updateStatus(criativo.id, 'reprovado', novoComentario)
       
-      if (novoComentario.trim()) {
-        await addComment(criativo.id, novoComentario)
-        setNovoComentario('')
+      if (response) {
+        setCriativo(response)
+        
+        // Atualizar imagem atual para refletir a nova URL principal
+        setImagemAtual(response.url)
+        
+        // Atualizar comentários localmente
+        if (response.comentarios) {
+          try {
+            const comentariosData = JSON.parse(response.comentarios)
+            if (Array.isArray(comentariosData)) {
+              setComentarios(comentariosData)
+            }
+          } catch (error) {
+            console.error('Erro ao parsear comentários:', error)
+          }
+        }
       }
+      
+      setNovoComentario('')
       
       toast({
         title: "Sucesso",
         description: "Criativo reprovado. Aguarde nova versão.",
       })
-      
-      // Recarregar dados
-      window.location.reload()
       
     } catch (error) {
       toast({
@@ -232,16 +287,16 @@ export default function ClienteCriativoDetalhes() {
     
     setIsSubmitting(true)
     try {
-      await addComment(criativo.id, novoComentario)
+      const response = await addComment(criativo.id, novoComentario)
       setNovoComentario('')
+      
+      // Recarregar os dados do criativo para garantir que os comentários estejam atualizados
+      await fetchCreativeDetails()
       
       toast({
         title: "Sucesso",
         description: "Comentário adicionado com sucesso!",
       })
-      
-      // Recarregar dados
-      window.location.reload()
       
     } catch (error) {
       toast({
@@ -306,6 +361,8 @@ export default function ClienteCriativoDetalhes() {
     )
   }
 
+  const totalVersoes = 1 + versoes.length
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
@@ -341,41 +398,87 @@ export default function ClienteCriativoDetalhes() {
               <CardTitle>Visualização</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden dark:bg-gray-800">
-                {criativo.url && (
-                  <>
-                    {criativo.url.includes('.mp4') ? (
-                      <video
-                        src={criativo.url}
-                        controls
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={criativo.url}
-                        alt={criativo.titulo || 'Criativo'}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </>
+              <div className="relative">
+                {/* Navegação entre versões */}
+                {totalVersoes > 1 && (
+                  <div className="absolute top-2 left-2 right-2 flex justify-between z-10">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navegarVersao('anterior')}
+                      className="bg-white/80 hover:bg-white/90"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navegarVersao('proximo')}
+                      className="bg-white/80 hover:bg-white/90"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
+                
+                {/* Indicador de versão atual */}
+                {totalVersoes > 1 && (
+                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
+                    <Badge variant="secondary" className="bg-white/80">
+                      {indiceAtual === 0 ? 'Principal' : `Versão ${indiceAtual}`}
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden dark:bg-gray-800">
+                  {imagemAtual && (
+                    <>
+                      {imagemAtual.includes('.mp4') ? (
+                        <video
+                          src={imagemAtual}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={imagemAtual}
+                          alt={criativo.titulo || 'Criativo'}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               
-              {/* Versões e Carrossel */}
-              {versoes.length > 0 && (
+              {/* Miniaturas das versões */}
+              {totalVersoes > 1 && (
                 <div className="mt-4">
-                  <h4 className="font-medium mb-2">Outras versões ({versoes.length})</h4>
+                  <h4 className="font-medium mb-2">Todas as versões ({totalVersoes})</h4>
                   <div className="grid grid-cols-4 gap-2">
+                    {/* Imagem principal */}
+                    <div 
+                      className={`aspect-square bg-gray-100 rounded overflow-hidden dark:bg-gray-800 cursor-pointer hover:opacity-75 border-2 ${indiceAtual === 0 ? 'border-blue-500' : 'border-transparent'}`}
+                      onClick={() => selecionarVersao(0)}
+                    >
+                      <img
+                        src={criativo.url}
+                        alt="Versão principal"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    
+                    {/* Versões adicionais */}
                     {versoes.map((versao, index) => (
-                      <div key={index} className="aspect-square bg-gray-100 rounded overflow-hidden dark:bg-gray-800">
+                      <div 
+                        key={index} 
+                        className={`aspect-square bg-gray-100 rounded overflow-hidden dark:bg-gray-800 cursor-pointer hover:opacity-75 border-2 ${indiceAtual === index + 1 ? 'border-blue-500' : 'border-transparent'}`}
+                        onClick={() => selecionarVersao(index + 1)}
+                      >
                         <img
                           src={versao.url}
                           alt={`Versão ${index + 1}`}
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-75"
-                          onClick={() => {
-                            // Atualizar imagem principal
-                            setCriativo(prev => prev ? { ...prev, url: versao.url } : null)
-                          }}
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     ))}
@@ -408,12 +511,16 @@ export default function ClienteCriativoDetalhes() {
                   {format(new Date(criativo.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </span>
               </div>
-              {criativo.legenda && (
-                <div>
-                  <h4 className="font-medium text-sm mb-1">Legenda:</h4>
-                  <p className="text-sm text-muted-foreground">{criativo.legenda}</p>
+              
+              {/* Legenda/Copy */}
+              <div>
+                <h4 className="font-medium text-sm mb-1">Legenda/Copy:</h4>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {criativo.legenda || 'Nenhuma legenda fornecida'}
+                  </p>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
