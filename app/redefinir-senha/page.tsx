@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { apiService } from "@/lib/api"
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -335,4 +335,31 @@ export default function ResetPasswordPage() {
       </div>
     </div>
   )
-} 
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-blue-50 dark:bg-blue-950/20">
+        <div className="absolute top-8 right-8">
+          <ThemeToggle />
+        </div>
+
+        <div className="mx-auto w-full max-w-md space-y-6 flex flex-col items-center">
+          <Logo className="mb-8" />
+
+          <Card className="w-full">
+            <CardContent className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Carregando...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
+  )
+}

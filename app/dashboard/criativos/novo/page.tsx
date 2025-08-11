@@ -1,5 +1,5 @@
 "use client"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { useCreatives } from "@/hooks/use-creatives"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Upload, Image as ImageIcon, X } from "lucide-react"
+import { ArrowLeft, Upload, Image as ImageIcon, X, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 
@@ -25,7 +25,7 @@ const tiposCreativos = [
   { value: "outro", label: "Outro" },
 ]
 
-export default function NovoCriativoPage() {
+function NovoCriativoContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -528,5 +528,22 @@ export default function NovoCriativoPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function NovoCriativoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Carregando...</span>
+          </div>
+        </div>
+      </div>
+    }>
+      <NovoCriativoContent />
+    </Suspense>
   )
 }
