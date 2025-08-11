@@ -1,15 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiService, Creative } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 export function useCreatives() {
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Buscar criativos
   const fetchCreatives = useCallback(async (empresaId?: string, status?: string, tipo?: string) => {
+    // Só buscar criativos se o usuário estiver autenticado
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -23,6 +31,11 @@ export function useCreatives() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
+      // Só mostrar toast se for um erro de autenticação
+      if (errorMessage.includes('Token não fornecido') || errorMessage.includes('Token inválido')) {
+        // Redirecionar para login em vez de mostrar erro
+        return;
+      }
       toast({
         title: "Erro",
         description: errorMessage,
@@ -31,7 +44,7 @@ export function useCreatives() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]);
 
   // Buscar criativo específico por ID
   const fetchCreativeById = useCallback(async (id: string) => {
@@ -233,8 +246,12 @@ export function useCreatives() {
 
   // Buscar criativos na inicialização
   useEffect(() => {
-    fetchCreatives();
-  }, []);
+    if (user) {
+      fetchCreatives();
+    } else {
+      setLoading(false);
+    }
+  }, [user, fetchCreatives]);
 
   // Deletar criativo
   const deleteCreative = async (id: string) => {

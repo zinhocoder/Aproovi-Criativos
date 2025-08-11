@@ -3,15 +3,23 @@
 import { useState, useEffect } from 'react';
 import { apiService, Empresa } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 export function useEmpresas() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Buscar empresas
   const fetchEmpresas = async (includeInactive: boolean = false) => {
+    // Só buscar empresas se o usuário estiver autenticado
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -23,6 +31,11 @@ export function useEmpresas() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
+      // Só mostrar toast se for um erro de autenticação
+      if (errorMessage.includes('Token não fornecido') || errorMessage.includes('Token inválido')) {
+        // Redirecionar para login em vez de mostrar erro
+        return;
+      }
       toast({
         title: "Erro",
         description: errorMessage,
@@ -130,8 +143,12 @@ export function useEmpresas() {
 
   // Buscar empresas na inicialização
   useEffect(() => {
-    fetchEmpresas();
-  }, []);
+    if (user) {
+      fetchEmpresas();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   return {
     empresas,
