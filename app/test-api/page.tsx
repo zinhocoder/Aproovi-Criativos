@@ -12,22 +12,13 @@ export default function TestApiPage() {
     setStatus('Testando conexão...');
     
          try {
-               const response = await fetch('https://aproovi-backend-wandering-violet-6242.fly.dev/api/auth/login', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json'
-         },
-         body: JSON.stringify({
-           email: 'admin@aproovi.com',
-           password: 'admin123'
-         })
-       });
-       const data = await response.json();
+               const response = await apiService.login('admin@aproovi.com', 'admin123');
+       const data = response;
       
-      if (response.ok) {
+      if (response.success) {
         setStatus(`✅ Backend funcionando! Resposta: ${JSON.stringify(data)}`);
       } else {
-        setStatus(`❌ Erro ${response.status}: ${data.message || 'Erro desconhecido'}`);
+        setStatus(`❌ Erro: ${response.message || 'Erro desconhecido'}`);
       }
     } catch (error) {
       setStatus(`❌ Erro de conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);

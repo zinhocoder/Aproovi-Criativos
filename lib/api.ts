@@ -60,26 +60,20 @@ export interface ApiResponse<T> {
 }
 
 class ApiService {
-  private getAuthToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  }
+
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const token = this.getAuthToken();
     const url = `${API_BASE_URL}${endpoint}`;
 
     // Não definir Content-Type para FormData (deixar o browser definir)
     const isFormData = options.body instanceof FormData;
     
     const config: RequestInit = {
+      credentials: 'include', // Incluir cookies
       headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...(!isFormData && { 'Content-Type': 'application/json' }),
         ...options.headers,
       },
@@ -134,7 +128,6 @@ class ApiService {
   }
 
   async uploadCreative(file: File, titulo?: string, legenda?: string, tipo?: string, empresaId?: string): Promise<ApiResponse<Creative>> {
-    const token = this.getAuthToken();
     const formData = new FormData();
     formData.append('file', file);
     
@@ -143,25 +136,13 @@ class ApiService {
     if (tipo) formData.append('tipo', tipo);
     if (empresaId) formData.append('empresaId', empresaId);
 
-    const response = await fetch(`${API_BASE_URL}/api/creatives/upload`, {
+    return this.request<Creative>('/api/creatives/upload', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data;
   }
 
   async uploadMultipleCreative(files: File[], legenda?: string, tipo?: string, titulo?: string, empresaId?: string): Promise<ApiResponse<Creative>> {
-    const token = this.getAuthToken();
     const formData = new FormData();
     
     // Adicionar todos os arquivos
@@ -176,21 +157,10 @@ class ApiService {
     if (empresaId) formData.append('empresaId', empresaId);
     formData.append('fileCount', files.length.toString());
 
-    const response = await fetch(`${API_BASE_URL}/api/creatives/upload-multiple`, {
+    return this.request<Creative>('/api/creatives/upload-multiple', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data;
   }
 
   async updateCreativeStatus(id: string, status: 'pendente' | 'aprovado' | 'reprovado', comentario?: string): Promise<ApiResponse<Creative>> {
@@ -208,25 +178,13 @@ class ApiService {
   }
 
   async addCreativeVersion(id: string, file: File): Promise<ApiResponse<Creative>> {
-    const token = this.getAuthToken();
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/api/creatives/${id}/versions`, {
+    return this.request<Creative>(`/api/creatives/${id}/versions`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data;
   }
 
   // Autenticação
@@ -250,12 +208,7 @@ class ApiService {
     });
   }
 
-  logout(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
-  }
+
 
   // Deletar criativo (soft delete)
   async deleteCreative(id: string): Promise<ApiResponse<Creative>> {
@@ -266,23 +219,13 @@ class ApiService {
 
   // Alterar imagem principal do criativo
   async updateCreativeImage(id: string, file: File): Promise<ApiResponse<Creative>> {
-    const token = this.getAuthToken();
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/api/creatives/${id}/image`, {
+    return this.request<Creative>(`/api/creatives/${id}/image`, {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
     });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-    return data;
   }
 
   // Adicionar comentário ao histórico
@@ -326,7 +269,9 @@ class ApiService {
 
   // Verificar se e-mail está registrado em empresa (endpoint público)
   async verifyClientEmail(email: string): Promise<ApiResponse<{ empresa: string; email: string }>> {
-    const response = await fetch(`${API_BASE_URL}/api/empresas/verify-email/${encodeURIComponent(email)}`, {
+    const url = `${API_BASE_URL}/api/empresas/verify-email/${encodeURIComponent(email)}`;
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -334,9 +279,11 @@ class ApiService {
     });
 
     const data = await response.json();
+    
     if (!response.ok) {
       throw new Error(data.message || `HTTP error! status: ${response.status}`);
     }
+    
     return data;
   }
 
@@ -371,6 +318,55 @@ class ApiService {
     const url = `/api/empresas/${id}/creatives${queryString ? `?${queryString}` : ''}`;
     
     return this.request<Creative[]>(url);
+  }
+
+  // ===== RECUPERAÇÃO DE SENHA =====
+
+  // Solicitar recuperação de senha
+  async forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  // Validar token de reset
+  async validateResetToken(token: string): Promise<ApiResponse<{ valid: boolean }>> {
+    return this.request<{ valid: boolean }>(`/api/auth/validate-reset-token/${token}`, {
+      method: 'GET',
+    });
+  }
+
+  // Redefinir senha
+  async resetPassword(token: string, password: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
+  // ===== SESSÃO =====
+
+  // Logout
+  async logout(): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('/api/auth/logout', {
+      method: 'POST',
+    });
+  }
+
+  // Verificar sessão
+  async checkSession(): Promise<ApiResponse<{ authenticated: boolean; user?: any }>> {
+    return this.request<{ authenticated: boolean; user?: any }>('/api/auth/check-session', {
+      method: 'GET',
+    });
+  }
+
+  // Atualizar perfil
+  async updateProfile(name: string): Promise<ApiResponse<{ user: any }>> {
+    return this.request<{ user: any }>('/api/auth/update-profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
   }
 }
 

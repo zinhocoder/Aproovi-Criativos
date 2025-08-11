@@ -372,7 +372,7 @@ export default function NovoCriativoPage() {
                             >
                               <X className="h-4 w-4" />
                             </Button>
-                            <div className="mt-2 text-sm text-gray-600 text-center">
+                            <div className="mt-2 text-sm text-muted-foreground text-center">
                               {selectedFiles[0]?.name}
                             </div>
                           </div>
@@ -381,16 +381,16 @@ export default function NovoCriativoPage() {
                     ) : (
                       <div>
                         <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">
+                        <h3 className="mt-2 text-sm font-medium text-foreground">
                           {isDragOver ? 'Solte os arquivos aqui' : 'Arraste e solte ou clique para selecionar'}
                         </h3>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           {tipoCreativo === "carrossel" 
                             ? "Múltiplas imagens ou vídeos até 50MB cada (máx. 10 arquivos)"
                             : "Imagem ou vídeo até 50MB"
                           }
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-muted-foreground/70 mt-1">
                           PNG, JPG, GIF, WebP, MP4, MOV
                         </p>
                       </div>

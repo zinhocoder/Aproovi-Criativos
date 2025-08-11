@@ -760,7 +760,7 @@ export default function CriativoDetalhesPage() {
             <TabsContent value="versoes" className="space-y-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Versões do Criativo</CardTitle>
+                  <CardTitle>Histórico de Versões</CardTitle>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -775,7 +775,7 @@ export default function CriativoDetalhesPage() {
                     ) : (
                       <>
                         <Plus className="mr-2 h-4 w-4" />
-                        Nova Versão
+                        Adicionar Versão
                       </>
                     )}
                   </Button>
@@ -789,115 +789,156 @@ export default function CriativoDetalhesPage() {
                   />
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {/* Mostrar arquivos do carrossel original se existirem */}
+                  <div className="space-y-6">
+                    {/* Versão Principal (Original) */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge variant="default" className="text-xs">
+                          V1 - Original
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          Criado em {formatDate(criativo?.createdAt || '')}
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <div className="aspect-square bg-muted rounded-lg overflow-hidden border-2 border-primary/20">
+                          {criativo?.url && (
+                            <img
+                              src={criativo.url}
+                              alt="Versão original"
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Ver em Tela Cheia
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Carrossel Original (se existir) */}
                     {criativo?.arquivos && (() => {
                       try {
                         const arquivosData = JSON.parse(criativo.arquivos)
                         if (Array.isArray(arquivosData) && arquivosData.length > 1) {
                           return (
                             <div>
-                              <h4 className="text-sm font-medium mb-2">Carrossel Original ({arquivosData.length} imagens)</h4>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="secondary" className="text-xs">
+                                  Carrossel Original
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {arquivosData.length} imagens
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 {arquivosData.map((arquivo, index) => (
-                                  <div key={`original-${criativo.id}-${arquivo.filename}-${index}`} className="relative group">
-                                    <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                                  <div key={`carrossel-${index}`} className="relative group">
+                                    <div className="aspect-square bg-muted rounded-lg overflow-hidden border">
                                       <img
                                         src={arquivo.url}
                                         alt={`Imagem ${index + 1} do carrossel`}
                                         className="w-full h-full object-cover"
-                                        loading="eager"
                                       />
                                     </div>
                                     <div className="absolute top-1 left-1">
-                                      <Badge variant="default" className="text-xs">
+                                      <Badge variant="outline" className="text-xs bg-background/80">
                                         {index + 1}
                                       </Badge>
-        </div>
-                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                                          <Button variant="secondary" size="sm" className="h-6 w-6 p-0">
-                                            <MoreHorizontal className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Download className="mr-2 h-4 w-4" />
-                                            Download
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                                            <Eye className="mr-2 h-4 w-4" />
-                                            Ver Original
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+                                    </div>
+                                  </div>
                                 ))}
-                </div>
-                      </div>
+                              </div>
+                            </div>
                           )
                         }
                       } catch (error) {
-                        console.error('Erro ao parsear arquivos:', error)
+                        console.error('Erro ao parsear arquivos do carrossel:', error)
                       }
                       return null
                     })()}
 
-                    {/* Mostrar versões adicionais se existirem */}
+                    {/* Versões Adicionais */}
                     {criativo?.versoes && (() => {
                       try {
                         const versoesData = JSON.parse(criativo.versoes)
                         if (Array.isArray(versoesData) && versoesData.length > 0) {
                           return (
                             <div>
-                              <h4 className="text-sm font-medium mb-2">Versões Adicionais ({versoesData.length})</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="outline" className="text-xs">
+                                  Versões Adicionais
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {versoesData.length} versão(ões)
+                                </span>
+                              </div>
+                              <div className="space-y-4">
                                 {versoesData.map((versao, index) => (
                                   <div key={`version-${index}`} className="relative group">
-                                    <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          V{versao.version || index + 2}
+                                        </Badge>
+                                        <span className="text-sm text-muted-foreground">
+                                          {versao.createdAt ? formatDate(versao.createdAt) : 'Data não disponível'}
+                                        </span>
+                                      </div>
+                                      <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem>
+                                              <Download className="mr-2 h-4 w-4" />
+                                              Download
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                              <Eye className="mr-2 h-4 w-4" />
+                                              Ver em Tela Cheia
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem 
+                                              className="text-red-600"
+                                              onClick={() => removeVersion(index)}
+                                            >
+                                              <XCircle className="mr-2 h-4 w-4" />
+                                              Remover Versão
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    </div>
+                                    <div className="aspect-square bg-muted rounded-lg overflow-hidden border mt-2">
                                       <img
                                         src={versao.url}
-                                        alt={`Versão adicional ${index + 1}`}
+                                        alt={`Versão ${versao.version || index + 2}`}
                                         className="w-full h-full object-cover"
                                       />
-                        </div>
-                                    <div className="absolute top-2 left-2">
-                                      <Badge variant="outline" className="text-xs">
-                                        V{index + 1}
-                                      </Badge>
-                        </div>
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button variant="secondary" size="sm">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          <DropdownMenuItem>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem>
-                                            <Eye className="mr-2 h-4 w-4" />
-                                            Ver Original
-                                          </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem 
-                                            className="text-red-600"
-                                            onClick={() => removeVersion(index)}
-                                          >
-                                            <XCircle className="mr-2 h-4 w-4" />
-                                            Remover
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )
                         }
@@ -907,56 +948,26 @@ export default function CriativoDetalhesPage() {
                       return null
                     })()}
 
-                    {/* Fallback para criativos únicos */}
-                    {(!criativo?.arquivos || JSON.parse(criativo.arquivos || '[]').length <= 1) && 
-                     (!criativo?.versoes || JSON.parse(criativo.versoes || '[]').length === 0) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="relative group">
-                          <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                            <img
-                              src={criativo?.url}
-                              alt="Criativo original"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="absolute top-2 left-2">
-                            <Badge variant="default">
-                              Original
-                            </Badge>
-                          </div>
-                        </div>
+                    {/* Mensagem quando não há versões */}
+                    {(!criativo?.versoes || (() => {
+                      try {
+                        const versoesData = JSON.parse(criativo.versoes || '[]')
+                        return !Array.isArray(versoesData) || versoesData.length === 0
+                      } catch {
+                        return true
+                      }
+                    })()) && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <ImageIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                        <p className="text-sm">Nenhuma versão adicional ainda.</p>
+                        <p className="text-xs mt-1">Clique em "Adicionar Versão" para criar uma nova versão deste criativo.</p>
                       </div>
                     )}
 
-                    {/* Botão para adicionar nova versão */}
-                    <div 
-                      className="aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center hover:border-muted-foreground/50 transition-colors cursor-pointer"
-                      onClick={handleAddVersion}
-                    >
-                      <div className="text-center">
-                        {isUploadingVersion ? (
-                          <>
-                            <Loader2 className="h-8 w-8 text-muted-foreground mx-auto mb-2 animate-spin" />
-                            <p className="text-sm text-muted-foreground">
-                              Enviando...
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">
-                              Adicionar nova(s) versão(ões)
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Múltiplos arquivos permitidos
-                            </p>
-                          </>
-                        )}
-                        </div>
-                      </div>
-                    </div>
-            </CardContent>
-          </Card>
+
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 

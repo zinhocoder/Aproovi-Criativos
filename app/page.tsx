@@ -6,12 +6,15 @@ import { CheckCircle, Clock, FileCheck, Users, Star, ArrowRight } from "lucide-r
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Logo } from "@/components/logo"
+import { UserMenu } from "@/components/user-menu"
 import { FaqSection } from "@/components/faq-section"
 import { TestimonialsCarousel } from "@/components/testimonials-carousel"
 import { HowItWorksSection } from "@/components/how-it-works-section"
 import { TutorialSection } from "@/components/tutorial-section"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function Home() {
+  const { user, isAuthenticated } = useAuth()
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -35,17 +38,26 @@ export default function Home() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button className="hidden sm:inline-flex">
-                Entrar
-              </Button>
-            </Link>
-            <Link href="/demo">
-              <Button variant="outline" className="hidden sm:inline-flex">
-                Demonstração
-              </Button>
-            </Link>
-            <ThemeToggle />
+            {isAuthenticated ? (
+              <>
+                <UserMenu user={user!} />
+                <ThemeToggle />
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button className="hidden sm:inline-flex">
+                    Entrar
+                  </Button>
+                </Link>
+                <Link href="/demo">
+                  <Button variant="outline" className="hidden sm:inline-flex">
+                    Demonstração
+                  </Button>
+                </Link>
+                <ThemeToggle />
+              </>
+            )}
           </div>
         </div>
       </header>

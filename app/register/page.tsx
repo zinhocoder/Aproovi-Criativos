@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,6 +44,8 @@ export default function RegisterPage() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
   const { register, loading } = useAuth()
+  const emailTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const accessKeyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Ler parâmetros da URL para preenchimento automático
   useEffect(() => {
@@ -59,7 +61,11 @@ export default function RegisterPage() {
       
       // Se for cliente e tiver e-mail, verificar automaticamente
       if (urlUserType === 'client' && urlEmail) {
-        checkEmailForClient(urlEmail)
+        console.log('🔍 Verificação automática de e-mail:', urlEmail)
+        // Usar setTimeout para garantir que o registerType seja atualizado primeiro
+        setTimeout(() => {
+          checkEmailForClient(urlEmail)
+        }, 100)
       }
     }
   }, [searchParams])
@@ -74,22 +80,39 @@ export default function RegisterPage() {
     }
   }, [searchParams])
 
+  // Limpar timeout quando componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (emailTimeoutRef.current) {
+        clearTimeout(emailTimeoutRef.current)
+      }
+      if (accessKeyTimeoutRef.current) {
+        clearTimeout(accessKeyTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Verificar se o e-mail está registrado em uma empresa (para clientes)
   const checkEmailForClient = async (email: string) => {
-    if (registerType !== 'client' || !email) return
+    if (!email) return
 
+    console.log('🔍 Verificando e-mail:', email)
     setEmailValidation({ checking: true, valid: null, message: "" })
 
     try {
+      console.log('📡 Chamando API para verificar e-mail...')
       const response = await apiService.verifyClientEmail(email)
+      console.log('📊 Resposta da API:', response)
       
       if (response.success && response.data) {
+        console.log('✅ E-mail válido!')
         setEmailValidation({
           checking: false,
           valid: true,
           message: `E-mail válido! Empresa: ${response.data.empresa}`
         })
       } else {
+        console.log('❌ E-mail inválido')
         setEmailValidation({
           checking: false,
           valid: false,
@@ -97,6 +120,7 @@ export default function RegisterPage() {
         })
       }
     } catch (error) {
+      console.error('❌ Erro ao verificar e-mail:', error)
       setEmailValidation({
         checking: false,
         valid: false,
@@ -155,13 +179,16 @@ export default function RegisterPage() {
     
     setEmail(newEmail)
     
+    // Limpar timeout anterior se existir
+    if (emailTimeoutRef.current) {
+      clearTimeout(emailTimeoutRef.current)
+    }
+    
     // Verificar e-mail para clientes após 1 segundo de inatividade
     if (registerType === 'client' && newEmail.includes('@')) {
-      const timeoutId = setTimeout(() => {
+      emailTimeoutRef.current = setTimeout(() => {
         checkEmailForClient(newEmail)
       }, 1000)
-      
-      return () => clearTimeout(timeoutId)
     }
   }
 
@@ -175,20 +202,26 @@ export default function RegisterPage() {
       return
     }
     
+    // Limpar timeout anterior se existir
+    if (accessKeyTimeoutRef.current) {
+      clearTimeout(accessKeyTimeoutRef.current)
+    }
+    
     // Verificar chave de acesso para agências após 1 segundo de inatividade
     if (registerType === 'agency' && newKey.length > 0) {
-      const timeoutId = setTimeout(() => {
+      accessKeyTimeoutRef.current = setTimeout(() => {
         checkAccessKeyForAgency(newKey)
       }, 1000)
-      
-      return () => clearTimeout(timeoutId)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    console.log('🚀 Iniciando registro:', { name, email, registerType, emailValidation, accessKeyValidation })
 
     if (!name || !email || !password || !confirmPassword) {
+      console.log('❌ Campos obrigatórios não preenchidos')
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos.",
@@ -217,7 +250,10 @@ export default function RegisterPage() {
 
     // Para clientes, verificar se o e-mail é válido
     if (registerType === 'client') {
+      console.log('🔍 Verificando validação de e-mail para cliente:', emailValidation)
+      
       if (emailValidation.valid === false) {
+        console.log('❌ E-mail inválido para cliente')
         toast({
           title: "📧 E-mail não autorizado",
           description: "Este e-mail não está registrado em nenhuma empresa. Entre em contato com sua agência para solicitar acesso.",
@@ -227,6 +263,7 @@ export default function RegisterPage() {
       }
       
       if (emailValidation.valid === null) {
+        console.log('⏳ E-mail ainda não foi verificado')
         toast({
           title: "⏳ Verificando e-mail",
           description: "Aguarde enquanto verificamos seu e-mail...",
@@ -234,6 +271,8 @@ export default function RegisterPage() {
         })
         return
       }
+      
+      console.log('✅ E-mail válido para cliente')
     }
 
     // Para agências, verificar se a chave de acesso é válida
@@ -273,6 +312,8 @@ export default function RegisterPage() {
       const finalEmail = (searchParams.get('email') && searchParams.get('userType') === 'client') 
         ? searchParams.get('email')! 
         : email
+      
+      console.log('📤 Enviando registro para API:', { name, finalEmail, registerType, hasAccessKey: !!accessKey })
       
       await register(name, finalEmail, password, registerType, registerType === 'agency' ? accessKey : undefined)
       
