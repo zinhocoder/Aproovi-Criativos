@@ -38,7 +38,17 @@ export function useAuth() {
               }
             } catch (error) {
               console.error('Erro ao verificar sessão:', error);
-              // Em caso de erro, manter usuário logado (pode ser problema de rede)
+              // Em caso de erro de autenticação, fazer logout
+              if (error instanceof Error && (
+                error.message.includes('Token não fornecido') || 
+                error.message.includes('Token inválido') ||
+                error.message.includes('Token não encontrado')
+              )) {
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+                setUser(null);
+              }
+              // Se for outro tipo de erro (rede, etc.), manter usuário logado
             }
           } catch (error) {
             console.error('Erro ao parsear dados do usuário:', error);
@@ -46,6 +56,9 @@ export function useAuth() {
             localStorage.removeItem('userType');
             setUser(null);
           }
+        } else {
+          // Se não há dados do usuário no localStorage, não fazer verificação de sessão
+          setUser(null);
         }
       }
       setLoading(false);

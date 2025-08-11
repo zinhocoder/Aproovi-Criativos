@@ -356,9 +356,41 @@ class ApiService {
 
   // Verificar sessão
   async checkSession(): Promise<ApiResponse<{ authenticated: boolean; user?: any }>> {
-    return this.request<{ authenticated: boolean; user?: any }>('/api/auth/check-session', {
-      method: 'GET',
-    });
+    try {
+      const url = `${API_BASE_URL}/api/auth/check-session`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      
+      // Para check-session, não lançar erro se não autenticado
+      if (response.status === 401) {
+        return {
+          success: false,
+          data: { authenticated: false },
+          message: data.message || 'Não autenticado'
+        };
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error);
+      return {
+        success: false,
+        data: { authenticated: false },
+        message: 'Erro ao verificar sessão'
+      };
+    }
   }
 
   // Atualizar perfil
