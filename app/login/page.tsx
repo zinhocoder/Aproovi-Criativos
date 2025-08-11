@@ -150,16 +150,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm">
-            <p className="text-muted-foreground">
-              Credenciais de demonstração:
-              <br />
-              Email: demo@ccs.com
-              <br />
-              Senha: demo123
-            </p>
-          </div>
-
           <div className="mt-6 text-center text-sm">
             Não tem uma conta?{" "}
             <Link href="/register" className="text-primary hover:underline">
