@@ -11,7 +11,7 @@ export function useProtectedRoute(redirectTo = '/login') {
     if (!loading && !user) {
       router.push(redirectTo);
     }
-  }, [user, loading, router, redirectTo]);
+  }, [user, loading, router]); // Removida dependência redirectTo para evitar re-renders
 
   return {
     user,

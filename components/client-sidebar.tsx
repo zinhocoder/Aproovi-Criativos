@@ -16,33 +16,48 @@ import {
   Clock,
   BookOpen
 } from 'lucide-react'
-// import { useAuth } from '@/hooks/use-auth'
-// import { useClientCompany } from '@/hooks/use-client-company'
-// import { useAulas } from '@/hooks/use-aulas'
-// import { ThemeToggle } from '@/components/theme-toggle'
+import { useAuth } from '@/hooks/use-auth'
+import { useClientCompany } from '@/hooks/use-client-company'
+import { useAulas } from '@/hooks/use-aulas'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function ClientSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   
-  // Temporariamente removidos todos os hooks para testar
-  // const { user, logout } = useAuth()
-  // const { company, loading } = useClientCompany()
+  const { user, logout } = useAuth()
+  const { company, loading } = useClientCompany()
   
-  // Dados temporários para teste
-  const user = { name: 'Usuário Teste', email: 'teste@teste.com' }
-  const company = { nome: 'Empresa Teste', ativa: true, descricao: 'Descrição teste' }
-  const loading = false
+  // Hook de aulas
+  const aulasHook = useAulas()
   
-  const logout = () => {
-    console.log('Logout temporário')
-    router.push('/login')
+  // Funções seguras para evitar erros
+  const getTotalProgress = () => {
+    try {
+      return aulasHook.getTotalProgress()
+    } catch (error) {
+      console.error('Erro ao calcular progresso:', error)
+      return 0
+    }
   }
   
-  // Funções temporárias para evitar erros
-  const getTotalProgress = () => 0
-  const getCompletedVideosCount = () => 0
-  const getTotalVideosCount = () => 9
+  const getCompletedVideosCount = () => {
+    try {
+      return aulasHook.getCompletedVideosCount()
+    } catch (error) {
+      console.error('Erro ao contar vídeos completados:', error)
+      return 0
+    }
+  }
+  
+  const getTotalVideosCount = () => {
+    try {
+      return aulasHook.getTotalVideosCount()
+    } catch (error) {
+      console.error('Erro ao contar total de vídeos:', error)
+      return 0
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -190,7 +205,7 @@ export function ClientSidebar() {
           </div>
         </div>
         <div className="flex items-center gap-2 mb-3">
-          {/* <ThemeToggle /> */}
+          <ThemeToggle />
           <Button
             variant="outline"
             size="sm"
