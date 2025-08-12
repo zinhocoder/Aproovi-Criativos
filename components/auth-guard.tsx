@@ -19,16 +19,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
       return
     }
 
-    // Aguardar um pouco para garantir que o localStorage seja carregado
+    // Verificar autenticação imediatamente
     const checkAuth = () => {
       try {
         // Verificar se há dados do usuário no localStorage
         const userData = localStorage.getItem('user')
+        const token = localStorage.getItem('token')
         
-        if (userData) {
+        console.log('🛡️ AuthGuard - Verificando autenticação...')
+        console.log('🛡️ AuthGuard - userData:', userData ? 'presente' : 'ausente')
+        console.log('🛡️ AuthGuard - token:', token ? 'presente' : 'ausente')
+        
+        if (userData && token) {
           try {
             const user = JSON.parse(userData)
-            console.log('🛡️ AuthGuard - Usuário encontrado:', user)
+            console.log('🛡️ AuthGuard - Usuário autenticado:', user)
             setIsAuthenticated(true)
             setLoading(false)
           } catch (parseError) {
@@ -38,7 +43,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
             router.push('/login')
           }
         } else {
-          console.log('🛡️ AuthGuard - Nenhum usuário encontrado')
+          console.log('🛡️ AuthGuard - Usuário não autenticado')
           setIsAuthenticated(false)
           setLoading(false)
           router.push('/login')
@@ -51,10 +56,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
     }
 
-    // Aguardar 100ms para garantir que o localStorage seja carregado
-    const timer = setTimeout(checkAuth, 100)
-    
-    return () => clearTimeout(timer)
+    // Executar verificação imediatamente
+    checkAuth()
   }, [router])
 
   if (loading) {

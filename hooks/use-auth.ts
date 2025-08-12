@@ -21,24 +21,27 @@ export function useAuth() {
     const checkAuth = async () => {
       if (typeof window !== 'undefined') {
         const userData = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
         
-        if (userData) {
+        console.log('useAuth - Verificando autenticação...');
+        console.log('useAuth - userData:', userData ? 'presente' : 'ausente');
+        console.log('useAuth - token:', token ? 'presente' : 'ausente');
+        
+        if (userData && token) {
           try {
             const user = JSON.parse(userData);
             setUser(user);
-            console.log('useAuth - Usuário carregado do localStorage:', user);
-            
-            // Não verificar sessão automaticamente para evitar conflitos
-            // A verificação será feita apenas quando necessário
+            console.log('useAuth - Usuário autenticado:', user);
           } catch (error) {
             console.error('useAuth - Erro ao parsear dados do usuário:', error);
             localStorage.removeItem('user');
             localStorage.removeItem('userType');
+            localStorage.removeItem('token');
             setUser(null);
           }
         } else {
           setUser(null);
-          console.log('useAuth - Nenhum usuário encontrado no localStorage');
+          console.log('useAuth - Usuário não autenticado');
         }
         setLoading(false);
       }
@@ -96,13 +99,16 @@ export function useAuth() {
       console.log('🔐 Login - Resposta recebida:', response);
       
       if (response.success && response.data) {
-        const { user: userData } = response.data;
+        const { user: userData, token } = response.data;
         
         console.log('🔐 Login - Dados do usuário:', userData);
         
-        // Salvar dados do usuário no localStorage (sem token, pois está no cookie)
+        // Salvar dados do usuário E token no localStorage como fallback
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('userType', userData.userType);
+        if (token) {
+          localStorage.setItem('token', token);
+        }
         setUser(userData);
         
         console.log('🔐 Login - Dados salvos no localStorage');
@@ -113,31 +119,25 @@ export function useAuth() {
           description: "Bem-vindo de volta!",
         });
         
-        // Aguardar um pouco para garantir que o estado seja atualizado
-        setTimeout(() => {
-          // Redirecionar baseado no tipo real do usuário
-          const redirectPath = userData.userType === 'client' ? '/cliente' : '/dashboard';
-          console.log('🔐 Login - Redirecionando para:', redirectPath);
-          
-          // Usar replace em vez de push para evitar problemas de navegação
-          console.log('🔐 Login - Tentando redirecionamento com router.replace...');
-          
-          try {
-            if (userData.userType === 'client') {
-              console.log('🔐 Login - Redirecionando cliente para /cliente');
-              router.replace('/cliente');
-            } else {
-              console.log('🔐 Login - Redirecionando agência para /dashboard');
-              router.replace('/dashboard');
-            }
-            console.log('🔐 Login - Redirecionamento com router.replace executado com sucesso');
-          } catch (redirectError) {
-            console.error('🔐 Login - Erro no redirecionamento com router:', redirectError);
-            console.log('🔐 Login - Tentando redirecionamento alternativo com window.location...');
-            // Tentar redirecionamento alternativo
-            window.location.href = redirectPath;
+        // Redirecionar imediatamente
+        const redirectPath = userData.userType === 'client' ? '/cliente' : '/dashboard';
+        console.log('🔐 Login - Redirecionando para:', redirectPath);
+        
+        try {
+          if (userData.userType === 'client') {
+            console.log('🔐 Login - Redirecionando cliente para /cliente');
+            router.replace('/cliente');
+          } else {
+            console.log('🔐 Login - Redirecionando agência para /dashboard');
+            router.replace('/dashboard');
           }
-        }, 200); // Reduzido para 200ms
+          console.log('🔐 Login - Redirecionamento executado com sucesso');
+        } catch (redirectError) {
+          console.error('🔐 Login - Erro no redirecionamento com router:', redirectError);
+          console.log('🔐 Login - Tentando redirecionamento alternativo com window.location...');
+          // Tentar redirecionamento alternativo
+          window.location.href = redirectPath;
+        }
         
         return response.data;
       } else {
@@ -211,6 +211,7 @@ export function useAuth() {
       // Limpar dados locais
       localStorage.removeItem('user');
       localStorage.removeItem('userType');
+      localStorage.removeItem('token');
       setUser(null);
       router.push('/login');
       

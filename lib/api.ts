@@ -71,10 +71,15 @@ class ApiService {
     // Não definir Content-Type para FormData (deixar o browser definir)
     const isFormData = options.body instanceof FormData;
     
+    // Verificar se há token no localStorage para fallback
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    
     const config: RequestInit = {
       credentials: 'include', // Incluir cookies
       headers: {
         ...(!isFormData && { 'Content-Type': 'application/json' }),
+        // Incluir token no header se disponível (fallback para cookies)
+        ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers,
       },
       ...options,
