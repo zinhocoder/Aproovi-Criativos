@@ -1,7 +1,7 @@
 "use client"
 
 import { Inter } from 'next/font/google'
-import { AuthGuard } from '@/components/auth-guard'
+// import { AuthGuard } from '@/components/auth-guard'
 import { Toaster } from '@/components/ui/toaster'
 import { ClientSidebar } from '@/components/client-sidebar'
 
@@ -14,7 +14,7 @@ export default function ClientLayout({
 }) {
   return (
     <div className={inter.className}>
-      <AuthGuard>
+      {/* <AuthGuard> */}
         <div className="flex h-screen bg-background">
           <ClientSidebar />
           <main className="flex-1 overflow-y-auto">
@@ -24,7 +24,7 @@ export default function ClientLayout({
           </main>
         </div>
         <Toaster />
-      </AuthGuard>
+      {/* </AuthGuard> */}
     </div>
   )
 }

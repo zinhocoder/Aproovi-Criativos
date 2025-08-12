@@ -16,19 +16,28 @@ import {
   Clock,
   BookOpen
 } from 'lucide-react'
-import { useAuth } from '@/hooks/use-auth'
-import { useClientCompany } from '@/hooks/use-client-company'
+// import { useAuth } from '@/hooks/use-auth'
+// import { useClientCompany } from '@/hooks/use-client-company'
 // import { useAulas } from '@/hooks/use-aulas'
-import { ThemeToggle } from '@/components/theme-toggle'
+// import { ThemeToggle } from '@/components/theme-toggle'
 
 export function ClientSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, logout } = useAuth()
-  const { company, loading } = useClientCompany()
   
-  // Temporariamente removido o hook useAulas para testar
-  // const aulasHook = useAulas()
+  // Temporariamente removidos todos os hooks para testar
+  // const { user, logout } = useAuth()
+  // const { company, loading } = useClientCompany()
+  
+  // Dados temporários para teste
+  const user = { name: 'Usuário Teste', email: 'teste@teste.com' }
+  const company = { nome: 'Empresa Teste', ativa: true, descricao: 'Descrição teste' }
+  const loading = false
+  
+  const logout = () => {
+    console.log('Logout temporário')
+    router.push('/login')
+  }
   
   // Funções temporárias para evitar erros
   const getTotalProgress = () => 0
@@ -181,7 +190,7 @@ export function ClientSidebar() {
           </div>
         </div>
         <div className="flex items-center gap-2 mb-3">
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
           <Button
             variant="outline"
             size="sm"
