@@ -15,7 +15,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     console.log('🛡️ AuthGuard - Estado atual:', { isAuthenticated, loading, user: !!user });
     
-    // Aguardar um pouco mais para garantir que o estado seja atualizado
+    // Aguardar mais tempo para garantir que o estado seja atualizado
     const timer = setTimeout(() => {
       console.log('🛡️ AuthGuard - Verificação após delay:', { isAuthenticated, loading, user: !!user });
       
@@ -23,7 +23,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         console.log('🛡️ AuthGuard - Redirecionando para login, usuário não autenticado');
         router.push('/login')
       }
-    }, 500);
+    }, 1000); // Aumentado para 1 segundo
 
     return () => clearTimeout(timer);
   }, [isAuthenticated, loading, user, router])

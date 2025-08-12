@@ -28,21 +28,8 @@ export function useAuth() {
             setUser(user);
             console.log('useAuth - Usuário carregado do localStorage:', user);
             
-            // Verificar se a sessão ainda é válida no servidor (apenas se não estiver no processo de login)
-            try {
-              const sessionResponse = await apiService.checkSession();
-              console.log('useAuth - Verificação de sessão:', sessionResponse);
-              if (!sessionResponse.success || !sessionResponse.data?.authenticated) {
-                // Sessão inválida, limpar dados locais
-                console.log('useAuth - Sessão inválida, limpando dados');
-                localStorage.removeItem('user');
-                localStorage.removeItem('userType');
-                setUser(null);
-              }
-            } catch (sessionError) {
-              console.error('useAuth - Erro ao verificar sessão:', sessionError);
-              // Em caso de erro na verificação, manter o usuário logado localmente
-            }
+            // Não verificar sessão automaticamente para evitar conflitos
+            // A verificação será feita apenas quando necessário
           } catch (error) {
             console.error('useAuth - Erro ao parsear dados do usuário:', error);
             localStorage.removeItem('user');
@@ -243,9 +230,13 @@ export function useAuth() {
   const checkSession = async () => {
     try {
       const sessionResponse = await apiService.checkSession();
+      console.log('checkSession - Resposta:', sessionResponse);
+      
       if (sessionResponse.success && sessionResponse.data?.authenticated) {
+        console.log('checkSession - Sessão válida');
         return true;
       } else {
+        console.log('checkSession - Sessão inválida, fazendo logout');
         // Sessão inválida, fazer logout
         localStorage.removeItem('user');
         localStorage.removeItem('userType');
@@ -253,7 +244,7 @@ export function useAuth() {
         return false;
       }
     } catch (error) {
-      console.error('Erro ao verificar sessão:', error);
+      console.error('checkSession - Erro ao verificar sessão:', error);
       return false;
     }
   };
