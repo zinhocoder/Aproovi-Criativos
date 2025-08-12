@@ -20,19 +20,26 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     try {
-      // Verificar se há token no localStorage
-      const token = localStorage.getItem('token')
+      // Verificar se há dados do usuário no localStorage
       const userData = localStorage.getItem('user')
       
-      if (token && userData) {
-        setIsAuthenticated(true)
+      if (userData) {
+        try {
+          const user = JSON.parse(userData)
+          console.log('🛡️ AuthGuard - Usuário encontrado:', user)
+          setIsAuthenticated(true)
+        } catch (parseError) {
+          console.error('🛡️ AuthGuard - Erro ao parsear dados do usuário:', parseError)
+          setIsAuthenticated(false)
+          router.push('/login')
+        }
       } else {
+        console.log('🛡️ AuthGuard - Nenhum usuário encontrado')
         setIsAuthenticated(false)
-        // Redirecionar imediatamente se não há autenticação
         router.push('/login')
       }
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error)
+      console.error('🛡️ AuthGuard - Erro ao verificar autenticação:', error)
       setIsAuthenticated(false)
       router.push('/login')
     } finally {

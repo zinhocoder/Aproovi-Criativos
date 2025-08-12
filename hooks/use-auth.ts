@@ -123,8 +123,10 @@ export function useAuth() {
           
           try {
             if (userData.userType === 'client') {
+              console.log('🔐 Login - Redirecionando cliente para /cliente');
               router.replace('/cliente');
             } else {
+              console.log('🔐 Login - Redirecionando agência para /dashboard');
               router.replace('/dashboard');
             }
             console.log('🔐 Login - Redirecionamento com router.replace executado com sucesso');
@@ -134,7 +136,7 @@ export function useAuth() {
             // Tentar redirecionamento alternativo
             window.location.href = redirectPath;
           }
-        }, 100);
+        }, 500); // Aumentado para 500ms para dar mais tempo
         
         return response.data;
       } else {
