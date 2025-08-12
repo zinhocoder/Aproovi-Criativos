@@ -44,6 +44,7 @@ export function useAuth() {
       }
     };
 
+    // Executar imediatamente
     checkAuth();
   }, []);
 
@@ -136,7 +137,7 @@ export function useAuth() {
             // Tentar redirecionamento alternativo
             window.location.href = redirectPath;
           }
-        }, 500); // Aumentado para 500ms para dar mais tempo
+        }, 200); // Reduzido para 200ms
         
         return response.data;
       } else {

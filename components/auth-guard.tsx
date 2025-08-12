@@ -19,32 +19,42 @@ export function AuthGuard({ children }: AuthGuardProps) {
       return
     }
 
-    try {
-      // Verificar se há dados do usuário no localStorage
-      const userData = localStorage.getItem('user')
-      
-      if (userData) {
-        try {
-          const user = JSON.parse(userData)
-          console.log('🛡️ AuthGuard - Usuário encontrado:', user)
-          setIsAuthenticated(true)
-        } catch (parseError) {
-          console.error('🛡️ AuthGuard - Erro ao parsear dados do usuário:', parseError)
+    // Aguardar um pouco para garantir que o localStorage seja carregado
+    const checkAuth = () => {
+      try {
+        // Verificar se há dados do usuário no localStorage
+        const userData = localStorage.getItem('user')
+        
+        if (userData) {
+          try {
+            const user = JSON.parse(userData)
+            console.log('🛡️ AuthGuard - Usuário encontrado:', user)
+            setIsAuthenticated(true)
+            setLoading(false)
+          } catch (parseError) {
+            console.error('🛡️ AuthGuard - Erro ao parsear dados do usuário:', parseError)
+            setIsAuthenticated(false)
+            setLoading(false)
+            router.push('/login')
+          }
+        } else {
+          console.log('🛡️ AuthGuard - Nenhum usuário encontrado')
           setIsAuthenticated(false)
+          setLoading(false)
           router.push('/login')
         }
-      } else {
-        console.log('🛡️ AuthGuard - Nenhum usuário encontrado')
+      } catch (error) {
+        console.error('🛡️ AuthGuard - Erro ao verificar autenticação:', error)
         setIsAuthenticated(false)
+        setLoading(false)
         router.push('/login')
       }
-    } catch (error) {
-      console.error('🛡️ AuthGuard - Erro ao verificar autenticação:', error)
-      setIsAuthenticated(false)
-      router.push('/login')
-    } finally {
-      setLoading(false)
     }
+
+    // Aguardar 100ms para garantir que o localStorage seja carregado
+    const timer = setTimeout(checkAuth, 100)
+    
+    return () => clearTimeout(timer)
   }, [router])
 
   if (loading) {
