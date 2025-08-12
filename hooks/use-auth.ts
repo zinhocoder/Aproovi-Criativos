@@ -18,24 +18,42 @@ export function useAuth() {
 
   // Verificar se o usuário está logado
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('user');
-      
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          setUser(user);
-        } catch (error) {
-          console.error('Erro ao parsear dados do usuário:', error);
-          localStorage.removeItem('user');
-          localStorage.removeItem('userType');
+    const checkAuth = async () => {
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('user');
+        
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            setUser(user);
+            
+            // Verificar se a sessão ainda é válida no servidor
+            try {
+              const sessionResponse = await apiService.checkSession();
+              if (!sessionResponse.success || !sessionResponse.data?.authenticated) {
+                // Sessão inválida, limpar dados locais
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+                setUser(null);
+              }
+            } catch (sessionError) {
+              console.error('Erro ao verificar sessão:', sessionError);
+              // Em caso de erro na verificação, manter o usuário logado localmente
+            }
+          } catch (error) {
+            console.error('Erro ao parsear dados do usuário:', error);
+            localStorage.removeItem('user');
+            localStorage.removeItem('userType');
+            setUser(null);
+          }
+        } else {
           setUser(null);
         }
-      } else {
-        setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
-    }
+    };
+
+    checkAuth();
   }, []);
 
   // Atualizar perfil
