@@ -22,26 +22,29 @@ interface Module {
 export function useAulas() {
   const [modules, setModules] = useState<Module[]>([])
   const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
 
   // Carregar progresso das aulas do localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined' && !initialized) {
-      const savedProgress = localStorage.getItem('ccs-hub-aulas-progress')
-      if (savedProgress) {
-        try {
-          setModules(JSON.parse(savedProgress))
-        } catch (error) {
-          console.error('Erro ao carregar progresso das aulas:', error)
+    try {
+      if (typeof window !== 'undefined') {
+        const savedProgress = localStorage.getItem('ccs-hub-aulas-progress')
+        if (savedProgress) {
+          try {
+            setModules(JSON.parse(savedProgress))
+          } catch (error) {
+            console.error('Erro ao carregar progresso das aulas:', error)
+            initializeModules()
+          }
+        } else {
           initializeModules()
         }
-      } else {
-        initializeModules()
+        setLoading(false)
       }
+    } catch (error) {
+      console.error('Erro geral no hook useAulas:', error)
       setLoading(false)
-      setInitialized(true)
     }
-  }, [initialized])
+  }, [])
 
   const initializeModules = () => {
     const initialModules: Module[] = [
@@ -262,24 +265,41 @@ export function useAulas() {
   }, [loading, modules.length])
 
   const getTotalProgress = () => {
-    if (modules.length === 0) return 0
-    
-    const totalVideos = modules.reduce((acc, module) => acc + module.videos.length, 0)
-    const completedVideos = modules.reduce((acc, module) => 
-      acc + module.videos.filter(video => video.isCompleted).length, 0
-    )
-    
-    return totalVideos > 0 ? (completedVideos / totalVideos) * 100 : 0
+    try {
+      if (!modules || modules.length === 0) return 0
+      
+      const totalVideos = modules.reduce((acc, module) => acc + (module.videos?.length || 0), 0)
+      const completedVideos = modules.reduce((acc, module) => 
+        acc + (module.videos?.filter(video => video.isCompleted)?.length || 0), 0
+      )
+      
+      return totalVideos > 0 ? (completedVideos / totalVideos) * 100 : 0
+    } catch (error) {
+      console.error('Erro ao calcular progresso total:', error)
+      return 0
+    }
   }
 
   const getCompletedVideosCount = () => {
-    return modules.reduce((acc, module) => 
-      acc + module.videos.filter(video => video.isCompleted).length, 0
-    )
+    try {
+      if (!modules) return 0
+      return modules.reduce((acc, module) => 
+        acc + (module.videos?.filter(video => video.isCompleted)?.length || 0), 0
+      )
+    } catch (error) {
+      console.error('Erro ao contar vídeos completados:', error)
+      return 0
+    }
   }
 
   const getTotalVideosCount = () => {
-    return modules.reduce((acc, module) => acc + module.videos.length, 0)
+    try {
+      if (!modules) return 0
+      return modules.reduce((acc, module) => acc + (module.videos?.length || 0), 0)
+    } catch (error) {
+      console.error('Erro ao contar total de vídeos:', error)
+      return 0
+    }
   }
 
   return {

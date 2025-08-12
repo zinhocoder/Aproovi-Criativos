@@ -27,8 +27,36 @@ export function ClientSidebar() {
   const { user, logout } = useAuth()
   const { company, loading } = useClientCompany()
   
-  // Sempre chamar o hook, mas verificar se deve ser usado
+  // Hook de aulas com verificação de segurança
   const aulasHook = useAulas()
+  
+  // Funções seguras para evitar erros
+  const getTotalProgress = () => {
+    try {
+      return aulasHook.getTotalProgress()
+    } catch (error) {
+      console.error('Erro ao calcular progresso:', error)
+      return 0
+    }
+  }
+  
+  const getCompletedVideosCount = () => {
+    try {
+      return aulasHook.getCompletedVideosCount()
+    } catch (error) {
+      console.error('Erro ao contar vídeos completados:', error)
+      return 0
+    }
+  }
+  
+  const getTotalVideosCount = () => {
+    try {
+      return aulasHook.getTotalVideosCount()
+    } catch (error) {
+      console.error('Erro ao contar total de vídeos:', error)
+      return 0
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -129,7 +157,7 @@ export function ClientSidebar() {
               {item.name}
               {item.name === 'Aulas' && (
                 <Badge variant="secondary" className="ml-auto text-xs">
-                  {aulasHook.getCompletedVideosCount()}/{aulasHook.getTotalVideosCount()}
+                  {getCompletedVideosCount()}/{getTotalVideosCount()}
                 </Badge>
               )}
             </Link>
@@ -142,16 +170,16 @@ export function ClientSidebar() {
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Progresso das Aulas</span>
-            <span className="font-medium">{Math.round(aulasHook.getTotalProgress())}%</span>
+            <span className="font-medium">{Math.round(getTotalProgress())}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div 
               className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ width: `${aulasHook.getTotalProgress()}%` }}
+              style={{ width: `${getTotalProgress()}%` }}
             />
           </div>
           <div className="text-xs text-muted-foreground text-center">
-            {aulasHook.getCompletedVideosCount()} de {aulasHook.getTotalVideosCount()} aulas concluídas
+            {getCompletedVideosCount()} de {getTotalVideosCount()} aulas concluídas
           </div>
         </div>
       </div>
