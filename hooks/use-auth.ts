@@ -97,10 +97,16 @@ export function useAuth() {
     try {
       setLoading(true);
       
+      console.log('Login - Iniciando login para:', email, userType);
+      
       const response = await apiService.login(email, password, userType);
+      
+      console.log('Login - Resposta recebida:', response);
       
       if (response.success && response.data) {
         const { user: userData } = response.data;
+        
+        console.log('Login - Dados do usuário:', userData);
         
         // Salvar dados do usuário no localStorage (sem token, pois está no cookie)
         localStorage.setItem('user', JSON.stringify(userData));
@@ -111,6 +117,16 @@ export function useAuth() {
           title: "Login realizado",
           description: "Bem-vindo de volta!",
         });
+        
+        // Verificar se a sessão foi criada corretamente
+        setTimeout(async () => {
+          try {
+            const sessionResponse = await apiService.checkSession();
+            console.log('Login - Verificação de sessão após login:', sessionResponse);
+          } catch (sessionError) {
+            console.error('Login - Erro na verificação de sessão:', sessionError);
+          }
+        }, 1000);
         
         // Redirecionar baseado no tipo real do usuário
         // Redirecionamento imediato - o cookie será processado automaticamente
@@ -126,6 +142,7 @@ export function useAuth() {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      console.error('Login - Erro:', err);
       toast({
         title: "Erro no login",
         description: errorMessage,
