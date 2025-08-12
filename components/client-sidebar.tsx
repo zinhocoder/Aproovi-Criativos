@@ -26,7 +26,9 @@ export function ClientSidebar() {
   const router = useRouter()
   const { user, logout } = useAuth()
   const { company, loading } = useClientCompany()
-  const { getTotalProgress, getCompletedVideosCount, getTotalVideosCount } = useAulas()
+  
+  // Sempre chamar o hook, mas verificar se deve ser usado
+  const aulasHook = useAulas()
 
   const handleLogout = () => {
     logout()
@@ -127,7 +129,7 @@ export function ClientSidebar() {
               {item.name}
               {item.name === 'Aulas' && (
                 <Badge variant="secondary" className="ml-auto text-xs">
-                  {getCompletedVideosCount()}/{getTotalVideosCount()}
+                  {aulasHook.getCompletedVideosCount()}/{aulasHook.getTotalVideosCount()}
                 </Badge>
               )}
             </Link>
@@ -140,16 +142,16 @@ export function ClientSidebar() {
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Progresso das Aulas</span>
-            <span className="font-medium">{Math.round(getTotalProgress())}%</span>
+            <span className="font-medium">{Math.round(aulasHook.getTotalProgress())}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div 
               className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ width: `${getTotalProgress()}%` }}
+              style={{ width: `${aulasHook.getTotalProgress()}%` }}
             />
           </div>
           <div className="text-xs text-muted-foreground text-center">
-            {getCompletedVideosCount()} de {getTotalVideosCount()} aulas concluídas
+            {aulasHook.getCompletedVideosCount()} de {aulasHook.getTotalVideosCount()} aulas concluídas
           </div>
         </div>
       </div>

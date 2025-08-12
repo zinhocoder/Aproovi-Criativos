@@ -22,22 +22,26 @@ interface Module {
 export function useAulas() {
   const [modules, setModules] = useState<Module[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   // Carregar progresso das aulas do localStorage
   useEffect(() => {
-    const savedProgress = localStorage.getItem('ccs-hub-aulas-progress')
-    if (savedProgress) {
-      try {
-        setModules(JSON.parse(savedProgress))
-      } catch (error) {
-        console.error('Erro ao carregar progresso das aulas:', error)
+    if (typeof window !== 'undefined' && !initialized) {
+      const savedProgress = localStorage.getItem('ccs-hub-aulas-progress')
+      if (savedProgress) {
+        try {
+          setModules(JSON.parse(savedProgress))
+        } catch (error) {
+          console.error('Erro ao carregar progresso das aulas:', error)
+          initializeModules()
+        }
+      } else {
         initializeModules()
       }
-    } else {
-      initializeModules()
+      setLoading(false)
+      setInitialized(true)
     }
-    setLoading(false)
-  }, [])
+  }, [initialized])
 
   const initializeModules = () => {
     const initialModules: Module[] = [
