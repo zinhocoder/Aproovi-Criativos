@@ -12,9 +12,58 @@ import { TestimonialsCarousel } from "@/components/testimonials-carousel"
 import { HowItWorksSection } from "@/components/how-it-works-section"
 import { TutorialSection } from "@/components/tutorial-section"
 import { useAuth } from "@/hooks/use-auth"
+import { useEffect, useState } from "react"
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isClient } = useAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Prevent hydration mismatch by not rendering auth-dependent content until client-side
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+          <div className="container flex h-16 items-center justify-between">
+            <Logo />
+            <nav className="hidden md:flex gap-6">
+              <Link href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">
+                Recursos
+              </Link>
+              <Link href="#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
+                Como Funciona
+              </Link>
+              <Link href="#tutorial" className="text-muted-foreground hover:text-foreground transition-colors">
+                Tutorial
+              </Link>
+              <Link href="#depoimentos" className="text-muted-foreground hover:text-foreground transition-colors">
+                Depoimentos
+              </Link>
+              <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
+                FAQ
+              </Link>
+            </nav>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+            </div>
+          </div>
+        </header>
+        <main className="flex-1">
+          <div className="container px-4 md:px-6 py-12">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+              <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -38,9 +87,9 @@ export default function Home() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
+            {isClient && isAuthenticated && user ? (
               <>
-                <UserMenu user={user!} />
+                <UserMenu user={user} />
                 <ThemeToggle />
               </>
             ) : (
@@ -98,6 +147,9 @@ export default function Home() {
                           src={`/placeholder.svg?height=32&width=32&text=${i}`}
                           alt={`User ${i}`}
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
                         />
                       </div>
                     ))}

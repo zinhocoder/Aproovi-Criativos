@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, ArrowLeft, ArrowRight } from "lucide-react"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { useEffect, useState } from "react"
 
 const testimonials = [
@@ -46,6 +45,7 @@ const testimonials = [
 ]
 
 export function TestimonialsCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [slidesToShow, setSlidesToShow] = useState(3)
 
   useEffect(() => {
@@ -64,6 +64,31 @@ export function TestimonialsCarousel() {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
+  const goToPrevious = () => {
+    if (testimonials && testimonials.length > 0) {
+      setCurrentIndex((prev) => (prev - slidesToShow + testimonials.length) % testimonials.length)
+    }
+  }
+
+  const goToNext = () => {
+    if (testimonials && testimonials.length > 0) {
+      setCurrentIndex((prev) => (prev + slidesToShow) % testimonials.length)
+    }
+  }
+
+  const getVisibleTestimonials = () => {
+    if (!testimonials || testimonials.length === 0) {
+      return []
+    }
+    
+    const visible = []
+    for (let i = 0; i < slidesToShow; i++) {
+      const index = (currentIndex + i) % testimonials.length
+      visible.push(testimonials[index])
+    }
+    return visible
+  }
+
   return (
     <section id="depoimentos" className="w-full py-12 md:py-24 lg:py-32 bg-muted/30">
       <div className="container px-4 md:px-6">
@@ -77,58 +102,68 @@ export function TestimonialsCarousel() {
         </div>
 
         <div className="mx-auto max-w-5xl py-12 relative">
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full"
-          >
-            <CarouselContent>
-              {testimonials.map((testimonial, index) => (
-                <CarouselItem key={index} className={`md:basis-1/${slidesToShow}`}>
-                  <Card className="h-full">
-                    <CardContent className="p-6 flex flex-col h-full">
-                      <div className="flex items-center gap-4 mb-4">
-                        <Avatar>
-                          <AvatarFallback>{testimonial.author.charAt(0)}</AvatarFallback>
-                          <AvatarImage src={`/testimonials/avatar-${index + 1}.jpg`} alt={testimonial.author} />
-                        </Avatar>
-                        <div>
-                          <h3 className="font-medium">{testimonial.author}</h3>
-                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                        </div>
-                      </div>
-                      <div className="flex mb-4">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < 5 ? "fill-yellow-400 text-yellow-400" : "text-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-sm flex-grow">{testimonial.content}</p>
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="md:block">
-              <CarouselPrevious className="md:absolute md:-left-12 md:top-1/2 md:-translate-y-1/2 static translate-y-0 translate-x-0 hidden md:flex" />
-              <CarouselNext className="md:absolute md:-right-12 md:top-1/2 md:-translate-y-1/2 static translate-y-0 translate-x-0 hidden md:flex" />
+          <div className="relative">
+            {/* Navigation arrows for desktop */}
+            <div className="hidden md:block">
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute -left-12 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                onClick={goToPrevious}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Anterior</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute -right-12 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                onClick={goToNext}
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span className="sr-only">Próximo</span>
+              </Button>
             </div>
-          </Carousel>
+
+            {/* Testimonials grid */}
+            <div className={`grid gap-6 ${slidesToShow === 1 ? 'grid-cols-1' : slidesToShow === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+              {getVisibleTestimonials().map((testimonial, index) => (
+                <Card key={index} className="h-full">
+                  <CardContent className="p-6 flex flex-col h-full">
+                    <div className="flex items-center gap-4 mb-4">
+                      <Avatar>
+                        <AvatarFallback>{testimonial.author.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={`/testimonials/avatar-${index + 1}.jpg`} alt={testimonial.author} />
+                      </Avatar>
+                      <div>
+                        <h3 className="font-medium">{testimonial.author}</h3>
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex mb-4">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < 5 ? "fill-yellow-400 text-yellow-400" : "text-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm flex-grow">{testimonial.content}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation arrows for mobile */}
           <div className="flex justify-center gap-2 mt-4 md:hidden">
             <Button
               variant="outline"
               size="icon"
               className="h-8 w-8 rounded-full"
-              onClick={() => {
-                const api = (document.querySelector('[data-embla-api="true"]') as any)?.__emblaApi
-                api?.scrollPrev()
-              }}
+              onClick={goToPrevious}
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="sr-only">Anterior</span>
@@ -137,14 +172,26 @@ export function TestimonialsCarousel() {
               variant="outline"
               size="icon"
               className="h-8 w-8 rounded-full"
-              onClick={() => {
-                const api = (document.querySelector('[data-embla-api="true"]') as any)?.__emblaApi
-                api?.scrollNext()
-              }}
+              onClick={goToNext}
             >
               <ArrowRight className="h-4 w-4" />
               <span className="sr-only">Próximo</span>
             </Button>
+          </div>
+
+          {/* Dots indicator */}
+          <div className="flex justify-center gap-2 mt-4">
+            {testimonials && testimonials.length > 0 && Array.from({ length: Math.ceil(testimonials.length / slidesToShow) }).map((_, index) => (
+              <button
+                key={index}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  Math.floor(currentIndex / slidesToShow) === index
+                    ? "bg-primary scale-125"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                }`}
+                onClick={() => setCurrentIndex(index * slidesToShow)}
+              />
+            ))}
           </div>
         </div>
       </div>

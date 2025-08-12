@@ -18,6 +18,15 @@ export function Logo({ className }: LogoProps) {
   // Use a default image during SSR to prevent hydration mismatch
   const logoSrc = mounted && theme === "dark" ? "/HORIZONTAL_BRANCO.svg" : "/HORIZONTAL.svg"
   
+  // Safety check for mounted state
+  if (!mounted) {
+    return (
+      <Link href="/" className={`flex items-center ${className}`}>
+        <div className="w-[150px] h-[50px] bg-muted animate-pulse rounded"></div>
+      </Link>
+    )
+  }
+  
   return (
     <Link href="/" className={`flex items-center ${className}`}>
       <Image 

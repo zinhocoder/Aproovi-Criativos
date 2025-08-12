@@ -29,6 +29,11 @@ export function UserMenu({ user }: UserMenuProps) {
   const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
+  // Safety check for user object
+  if (!user || !user.name || !user.email || !user.userType) {
+    return null
+  }
+
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
@@ -45,6 +50,9 @@ export function UserMenu({ user }: UserMenuProps) {
   }
 
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') {
+      return 'U'
+    }
     return name
       .split(' ')
       .map(word => word[0])
@@ -54,6 +62,9 @@ export function UserMenu({ user }: UserMenuProps) {
   }
 
   const getUserTypeLabel = (userType: string) => {
+    if (!userType || typeof userType !== 'string') {
+      return 'Usuário'
+    }
     return userType === 'client' ? 'Cliente' : 'Agência'
   }
 

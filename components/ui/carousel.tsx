@@ -14,6 +14,65 @@ interface CarouselProps {
   interval?: number
 }
 
+// Add missing carousel components that are being imported
+export const CarouselContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex", className)}
+    {...props}
+  />
+))
+CarouselContent.displayName = "CarouselContent"
+
+export const CarouselItem = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("min-w-0 flex-shrink-0", className)}
+    {...props}
+  />
+))
+CarouselItem.displayName = "CarouselItem"
+
+export const CarouselPrevious = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<typeof Button>
+>(({ className, variant = "outline", size = "icon", ...props }, ref) => (
+  <Button
+    ref={ref}
+    variant={variant}
+    size={size}
+    className={cn("h-8 w-8 rounded-full", className)}
+    {...props}
+  >
+    <ChevronLeft className="h-4 w-4" />
+    <span className="sr-only">Previous slide</span>
+  </Button>
+))
+CarouselPrevious.displayName = "CarouselPrevious"
+
+export const CarouselNext = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<typeof Button>
+>(({ className, variant = "outline", size = "icon", ...props }, ref) => (
+  <Button
+    ref={ref}
+    variant={variant}
+    size={size}
+    className={cn("h-8 w-8 rounded-full", className)}
+    {...props}
+  >
+    <ChevronRight className="h-4 w-4" />
+    <span className="sr-only">Next slide</span>
+  </Button>
+))
+CarouselNext.displayName = "CarouselNext"
+
 export function Carousel({
   images,
   className,

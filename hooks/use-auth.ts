@@ -13,11 +13,19 @@ interface User {
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
+  // Check if we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Verificar se o usuário está logado
   useEffect(() => {
+    if (!isClient) return;
+
     const checkAuth = async () => {
       if (typeof window !== 'undefined') {
         const userData = localStorage.getItem('user');
@@ -49,7 +57,7 @@ export function useAuth() {
 
     // Executar imediatamente
     checkAuth();
-  }, []);
+  }, [isClient]);
 
   // Atualizar perfil
   const updateProfile = async (name: string) => {
@@ -223,12 +231,14 @@ export function useAuth() {
   };
 
   // Verificar se está autenticado
-  const isAuthenticated = !!user;
+  const isAuthenticated = isClient && !!user;
   
   // Log para debug
   useEffect(() => {
-    console.log('🔍 useAuth - Estado atualizado:', { user, isAuthenticated, loading });
-  }, [user, isAuthenticated, loading]);
+    if (isClient) {
+      console.log('🔍 useAuth - Estado atualizado:', { user, isAuthenticated, loading });
+    }
+  }, [user, isAuthenticated, loading, isClient]);
 
   // Função para verificar sessão manualmente
   const checkSession = async () => {
@@ -257,6 +267,7 @@ export function useAuth() {
     user,
     loading,
     isAuthenticated,
+    isClient,
     login,
     register,
     logout,
