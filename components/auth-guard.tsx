@@ -1,32 +1,44 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/use-auth'
 
 interface AuthGuardProps {
   children: React.ReactNode
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, loading, user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    console.log('🛡️ AuthGuard - Estado atual:', { isAuthenticated, loading, user: !!user });
-    
-    // Aguardar mais tempo para garantir que o estado seja atualizado
-    const timer = setTimeout(() => {
-      console.log('🛡️ AuthGuard - Verificação após delay:', { isAuthenticated, loading, user: !!user });
+    // Verificar se estamos no browser
+    if (typeof window === 'undefined') {
+      setLoading(false)
+      return
+    }
+
+    try {
+      // Verificar se há token no localStorage
+      const token = localStorage.getItem('token')
+      const userData = localStorage.getItem('user')
       
-      if (!loading && !isAuthenticated && !user) {
-        console.log('🛡️ AuthGuard - Redirecionando para login, usuário não autenticado');
+      if (token && userData) {
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+        // Redirecionar imediatamente se não há autenticação
         router.push('/login')
       }
-    }, 1000); // Aumentado para 1 segundo
-
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, loading, user, router])
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error)
+      setIsAuthenticated(false)
+      router.push('/login')
+    } finally {
+      setLoading(false)
+    }
+  }, [router])
 
   if (loading) {
     return (
@@ -39,17 +51,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
     )
   }
 
-  // Se não está autenticado mas ainda está carregando, mostrar loading
-  if (!isAuthenticated && !user) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Verificando autenticação...</p>
+          <p className="mt-2 text-sm text-gray-600">Redirecionando...</p>
         </div>
       </div>
     )
   }
 
   return <>{children}</>
+} 
 } 
