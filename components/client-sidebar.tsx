@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useClientCompany } from '@/hooks/use-client-company'
-import { useAulas } from '@/hooks/use-aulas'
+// import { useAulas } from '@/hooks/use-aulas'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export function ClientSidebar() {
@@ -27,36 +27,13 @@ export function ClientSidebar() {
   const { user, logout } = useAuth()
   const { company, loading } = useClientCompany()
   
-  // Hook de aulas com verificação de segurança
-  const aulasHook = useAulas()
+  // Temporariamente removido o hook useAulas para testar
+  // const aulasHook = useAulas()
   
-  // Funções seguras para evitar erros
-  const getTotalProgress = () => {
-    try {
-      return aulasHook.getTotalProgress()
-    } catch (error) {
-      console.error('Erro ao calcular progresso:', error)
-      return 0
-    }
-  }
-  
-  const getCompletedVideosCount = () => {
-    try {
-      return aulasHook.getCompletedVideosCount()
-    } catch (error) {
-      console.error('Erro ao contar vídeos completados:', error)
-      return 0
-    }
-  }
-  
-  const getTotalVideosCount = () => {
-    try {
-      return aulasHook.getTotalVideosCount()
-    } catch (error) {
-      console.error('Erro ao contar total de vídeos:', error)
-      return 0
-    }
-  }
+  // Funções temporárias para evitar erros
+  const getTotalProgress = () => 0
+  const getCompletedVideosCount = () => 0
+  const getTotalVideosCount = () => 9
 
   const handleLogout = () => {
     logout()

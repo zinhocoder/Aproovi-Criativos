@@ -257,12 +257,7 @@ export function useAulas() {
     })
   }
 
-  // Executar desbloqueio baseado no progresso quando os módulos carregam
-  useEffect(() => {
-    if (!loading && modules.length > 0) {
-      unlockModulesBasedOnProgress()
-    }
-  }, [loading, modules.length])
+  // Removido useEffect que causava loop infinito
 
   const getTotalProgress = () => {
     try {
