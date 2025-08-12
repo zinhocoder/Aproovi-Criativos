@@ -101,39 +101,53 @@ export function useAuth() {
     try {
       setLoading(true);
       
-      console.log('Login - Iniciando login para:', email, userType);
+      console.log('🔐 Login - Iniciando login para:', email, userType);
       
       const response = await apiService.login(email, password, userType);
       
-      console.log('Login - Resposta recebida:', response);
+      console.log('🔐 Login - Resposta recebida:', response);
       
       if (response.success && response.data) {
         const { user: userData } = response.data;
         
-        console.log('Login - Dados do usuário:', userData);
+        console.log('🔐 Login - Dados do usuário:', userData);
         
         // Salvar dados do usuário no localStorage (sem token, pois está no cookie)
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('userType', userData.userType);
         setUser(userData);
         
+        console.log('🔐 Login - Dados salvos no localStorage');
+        console.log('🔐 Login - Estado do usuário atualizado:', userData);
+        
         toast({
           title: "Login realizado",
           description: "Bem-vindo de volta!",
         });
         
-        // Redirecionar baseado no tipo real do usuário
-        // Redirecionamento imediato - o cookie será processado automaticamente
-        console.log('Login - Redirecionando para:', userData.userType === 'client' ? '/cliente' : '/dashboard');
-        
-        // Usar replace em vez de push para evitar problemas de navegação
-        if (userData.userType === 'client') {
-          router.replace('/cliente');
-        } else {
-          router.replace('/dashboard');
-        }
-        
-        console.log('Login - Redirecionamento executado');
+        // Aguardar um pouco para garantir que o estado seja atualizado
+        setTimeout(() => {
+          // Redirecionar baseado no tipo real do usuário
+          const redirectPath = userData.userType === 'client' ? '/cliente' : '/dashboard';
+          console.log('🔐 Login - Redirecionando para:', redirectPath);
+          
+          // Usar replace em vez de push para evitar problemas de navegação
+          console.log('🔐 Login - Tentando redirecionamento com router.replace...');
+          
+          try {
+            if (userData.userType === 'client') {
+              router.replace('/cliente');
+            } else {
+              router.replace('/dashboard');
+            }
+            console.log('🔐 Login - Redirecionamento com router.replace executado com sucesso');
+          } catch (redirectError) {
+            console.error('🔐 Login - Erro no redirecionamento com router:', redirectError);
+            console.log('🔐 Login - Tentando redirecionamento alternativo com window.location...');
+            // Tentar redirecionamento alternativo
+            window.location.href = redirectPath;
+          }
+        }, 100);
         
         return response.data;
       } else {
@@ -141,7 +155,7 @@ export function useAuth() {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      console.error('Login - Erro:', err);
+      console.error('🔐 Login - Erro:', err);
       toast({
         title: "Erro no login",
         description: errorMessage,
@@ -219,6 +233,11 @@ export function useAuth() {
 
   // Verificar se está autenticado
   const isAuthenticated = !!user;
+  
+  // Log para debug
+  useEffect(() => {
+    console.log('🔍 useAuth - Estado atualizado:', { user, isAuthenticated, loading });
+  }, [user, isAuthenticated, loading]);
 
   // Função para verificar sessão manualmente
   const checkSession = async () => {

@@ -26,8 +26,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    console.log('📝 Login - Formulário submetido:', { email, loginType });
 
     if (!email || !password) {
+      console.log('📝 Login - Campos obrigatórios não preenchidos');
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos.",
@@ -36,11 +39,14 @@ export default function LoginPage() {
       return
     }
 
+    console.log('📝 Login - Iniciando processo de login...');
+
     try {
       await login(email, password, loginType)
+      console.log('📝 Login - Processo de login concluído');
       // O redirecionamento e toast são feitos automaticamente no hook useAuth
     } catch (error) {
-      console.error('Erro no login:', error)
+      console.error('📝 Login - Erro no login:', error)
       // O erro já é tratado no hook useAuth
     }
   }
