@@ -27,7 +27,7 @@ export function useAuth() {
         console.log('useAuth - userData:', userData ? 'presente' : 'ausente');
         console.log('useAuth - token:', token ? 'presente' : 'ausente');
         
-        if (userData && token) {
+        if (userData) {
           try {
             const user = JSON.parse(userData);
             setUser(user);

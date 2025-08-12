@@ -74,6 +74,9 @@ class ApiService {
     // Verificar se há token no localStorage para fallback
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
+    console.log('🌐 API Request - URL:', url);
+    console.log('🌐 API Request - Token:', token ? 'presente' : 'ausente');
+    
     const config: RequestInit = {
       credentials: 'include', // Incluir cookies
       headers: {
@@ -84,6 +87,8 @@ class ApiService {
       },
       ...options,
     };
+    
+    console.log('🌐 API Request - Headers:', config.headers);
 
     try {
       const response = await fetch(url, config);

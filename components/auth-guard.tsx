@@ -30,7 +30,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         console.log('🛡️ AuthGuard - userData:', userData ? 'presente' : 'ausente')
         console.log('🛡️ AuthGuard - token:', token ? 'presente' : 'ausente')
         
-        if (userData && token) {
+        if (userData) {
           try {
             const user = JSON.parse(userData)
             console.log('🛡️ AuthGuard - Usuário autenticado:', user)
