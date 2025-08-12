@@ -26,28 +26,32 @@ export function useAuth() {
           try {
             const user = JSON.parse(userData);
             setUser(user);
+            console.log('useAuth - Usuário carregado do localStorage:', user);
             
-            // Verificar se a sessão ainda é válida no servidor
+            // Verificar se a sessão ainda é válida no servidor (apenas se não estiver no processo de login)
             try {
               const sessionResponse = await apiService.checkSession();
+              console.log('useAuth - Verificação de sessão:', sessionResponse);
               if (!sessionResponse.success || !sessionResponse.data?.authenticated) {
                 // Sessão inválida, limpar dados locais
+                console.log('useAuth - Sessão inválida, limpando dados');
                 localStorage.removeItem('user');
                 localStorage.removeItem('userType');
                 setUser(null);
               }
             } catch (sessionError) {
-              console.error('Erro ao verificar sessão:', sessionError);
+              console.error('useAuth - Erro ao verificar sessão:', sessionError);
               // Em caso de erro na verificação, manter o usuário logado localmente
             }
           } catch (error) {
-            console.error('Erro ao parsear dados do usuário:', error);
+            console.error('useAuth - Erro ao parsear dados do usuário:', error);
             localStorage.removeItem('user');
             localStorage.removeItem('userType');
             setUser(null);
           }
         } else {
           setUser(null);
+          console.log('useAuth - Nenhum usuário encontrado no localStorage');
         }
         setLoading(false);
       }
@@ -118,23 +122,18 @@ export function useAuth() {
           description: "Bem-vindo de volta!",
         });
         
-        // Verificar se a sessão foi criada corretamente
-        setTimeout(async () => {
-          try {
-            const sessionResponse = await apiService.checkSession();
-            console.log('Login - Verificação de sessão após login:', sessionResponse);
-          } catch (sessionError) {
-            console.error('Login - Erro na verificação de sessão:', sessionError);
-          }
-        }, 1000);
-        
         // Redirecionar baseado no tipo real do usuário
         // Redirecionamento imediato - o cookie será processado automaticamente
+        console.log('Login - Redirecionando para:', userData.userType === 'client' ? '/cliente' : '/dashboard');
+        
+        // Usar replace em vez de push para evitar problemas de navegação
         if (userData.userType === 'client') {
-          router.push('/cliente');
+          router.replace('/cliente');
         } else {
-          router.push('/dashboard');
+          router.replace('/dashboard');
         }
+        
+        console.log('Login - Redirecionamento executado');
         
         return response.data;
       } else {
