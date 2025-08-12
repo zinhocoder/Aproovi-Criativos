@@ -52,8 +52,22 @@ import { Creative, apiService } from '@/lib/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
+import { useProtectedRoute } from '@/hooks/use-protected-route'
+import { Loader2 } from 'lucide-react'
 
 export default function ClientDashboard() {
+  const { user, loading } = useProtectedRoute('/login');
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Carregando...</span>
+        </div>
+      </div>
+    );
+  }
   const { company, loading: companyLoading } = useClientCompany()
   const { 
     updateStatus, 

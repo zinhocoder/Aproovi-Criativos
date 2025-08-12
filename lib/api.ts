@@ -122,6 +122,11 @@ class ApiService {
     return this.request<Creative[]>(endpoint);
   }
 
+  // Buscar todos os criativos (para dashboard)
+  async getAllCreatives(): Promise<ApiResponse<Creative[]>> {
+    return this.request<Creative[]>('/api/creatives');
+  }
+
   // Buscar criativo específico por ID
   async getCreativeById(id: string): Promise<ApiResponse<Creative>> {
     return this.request<Creative>(`/api/creatives/${id}`);

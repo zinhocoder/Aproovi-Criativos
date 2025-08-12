@@ -38,13 +38,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password, loginType)
-      
-      toast({
-        title: "Login realizado com sucesso",
-        description: `Bem-vindo de volta! Você entrou como ${loginType === "agency" ? "agência" : "cliente"}.`,
-      })
-      
-      // O redirecionamento é feito automaticamente no hook useAuth
+      // O redirecionamento e toast são feitos automaticamente no hook useAuth
     } catch (error) {
       console.error('Erro no login:', error)
       // O erro já é tratado no hook useAuth

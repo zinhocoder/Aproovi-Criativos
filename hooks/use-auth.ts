@@ -18,53 +18,24 @@ export function useAuth() {
 
   // Verificar se o usuário está logado
   useEffect(() => {
-    const checkAuth = async () => {
-      if (typeof window !== 'undefined') {
-        const userData = localStorage.getItem('user');
-        
-        if (userData) {
-          try {
-            const user = JSON.parse(userData);
-            setUser(user);
-            
-            // Verificar se a sessão ainda é válida no servidor
-            try {
-              const sessionResponse = await apiService.checkSession();
-              if (!sessionResponse.success || !sessionResponse.authenticated) {
-                // Sessão inválida, fazer logout
-                localStorage.removeItem('user');
-                localStorage.removeItem('userType');
-                setUser(null);
-              }
-            } catch (error) {
-              console.error('Erro ao verificar sessão:', error);
-              // Em caso de erro de autenticação, fazer logout
-              if (error instanceof Error && (
-                error.message.includes('Token não fornecido') || 
-                error.message.includes('Token inválido') ||
-                error.message.includes('Token não encontrado')
-              )) {
-                localStorage.removeItem('user');
-                localStorage.removeItem('userType');
-                setUser(null);
-              }
-              // Se for outro tipo de erro (rede, etc.), manter usuário logado
-            }
-          } catch (error) {
-            console.error('Erro ao parsear dados do usuário:', error);
-            localStorage.removeItem('user');
-            localStorage.removeItem('userType');
-            setUser(null);
-          }
-        } else {
-          // Se não há dados do usuário no localStorage, não fazer verificação de sessão
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          setUser(user);
+        } catch (error) {
+          console.error('Erro ao parsear dados do usuário:', error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('userType');
           setUser(null);
         }
+      } else {
+        setUser(null);
       }
       setLoading(false);
-    };
-
-    checkAuth();
+    }
   }, []);
 
   // Atualizar perfil
@@ -124,6 +95,7 @@ export function useAuth() {
         });
         
         // Redirecionar baseado no tipo real do usuário
+        // Redirecionamento imediato - o cookie será processado automaticamente
         if (userData.userType === 'client') {
           router.push('/cliente');
         } else {
@@ -214,6 +186,25 @@ export function useAuth() {
   // Verificar se está autenticado
   const isAuthenticated = !!user;
 
+  // Função para verificar sessão manualmente
+  const checkSession = async () => {
+    try {
+      const sessionResponse = await apiService.checkSession();
+      if (sessionResponse.success && sessionResponse.data?.authenticated) {
+        return true;
+      } else {
+        // Sessão inválida, fazer logout
+        localStorage.removeItem('user');
+        localStorage.removeItem('userType');
+        setUser(null);
+        return false;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error);
+      return false;
+    }
+  };
+
   return {
     user,
     loading,
@@ -222,5 +213,6 @@ export function useAuth() {
     register,
     logout,
     updateProfile,
+    checkSession,
   };
 } 
