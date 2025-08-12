@@ -64,4 +64,3 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   return <>{children}</>
 } 
-} 
