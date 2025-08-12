@@ -20,9 +20,9 @@ import {
   Video,
   FileText,
   Play,
-  ChevronLeft,
-  ChevronRight
+  Share2
 } from 'lucide-react'
+import { Carousel } from '@/components/ui/carousel'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,8 +64,6 @@ export default function ClienteCriativoDetalhes() {
   const [loading, setLoading] = useState(true)
   const [comentarios, setComentarios] = useState<Comment[]>([])
   const [versoes, setVersoes] = useState<Version[]>([])
-  const [imagemAtual, setImagemAtual] = useState<string>('')
-  const [indiceAtual, setIndiceAtual] = useState(0)
   const [novoComentario, setNovoComentario] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -79,7 +77,6 @@ export default function ClienteCriativoDetalhes() {
       const response = await fetchCreativeById(id)
       if (response) {
         setCriativo(response)
-        setImagemAtual(response.url)
         
         // Carregar comentários
         let comentariosArray: Comment[] = []
@@ -149,40 +146,7 @@ export default function ClienteCriativoDetalhes() {
     }
   }, [id, fetchCreativeDetails])
 
-  // Função para navegar entre versões
-  const navegarVersao = (direcao: 'anterior' | 'proximo') => {
-    const totalVersoes = 1 + versoes.length // Imagem principal + versões
-    let novoIndice = indiceAtual
-    
-    if (direcao === 'anterior') {
-      novoIndice = indiceAtual > 0 ? indiceAtual - 1 : totalVersoes - 1
-    } else {
-      novoIndice = indiceAtual < totalVersoes - 1 ? indiceAtual + 1 : 0
-    }
-    
-    setIndiceAtual(novoIndice)
-    
-    // Definir imagem atual
-    if (novoIndice === 0) {
-      // Imagem principal
-      setImagemAtual(criativo?.url || '')
-    } else {
-      // Versão específica
-      const versao = versoes[novoIndice - 1]
-      setImagemAtual(versao.url)
-    }
-  }
 
-  // Função para selecionar versão específica
-  const selecionarVersao = (index: number) => {
-    setIndiceAtual(index)
-    if (index === 0) {
-      setImagemAtual(criativo?.url || '')
-    } else {
-      const versao = versoes[index - 1]
-      setImagemAtual(versao.url)
-    }
-  }
 
   const handleAprovar = async () => {
     if (!criativo) return
@@ -193,9 +157,6 @@ export default function ClienteCriativoDetalhes() {
       
       if (response) {
         setCriativo(response)
-        
-        // Atualizar imagem atual para refletir a nova URL principal
-        setImagemAtual(response.url)
         
         // Atualizar comentários localmente
         if (response.comentarios) {
@@ -247,9 +208,6 @@ export default function ClienteCriativoDetalhes() {
       
       if (response) {
         setCriativo(response)
-        
-        // Atualizar imagem atual para refletir a nova URL principal
-        setImagemAtual(response.url)
         
         // Atualizar comentários localmente
         if (response.comentarios) {
@@ -306,6 +264,52 @@ export default function ClienteCriativoDetalhes() {
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Função para compartilhar link do criativo
+  const handleShare = async () => {
+    if (!criativo) return
+
+    try {
+      // Construir o link do painel do cliente (mesmo painel)
+      const shareUrl = `${window.location.origin}/cliente/criativos/${criativo.id}`
+      
+      // Copiar para a área de transferência
+      await navigator.clipboard.writeText(shareUrl)
+      
+      toast({
+        title: "Link copiado!",
+        description: "O link do criativo foi copiado para a área de transferência.",
+      })
+    } catch (error) {
+      console.error('Erro ao copiar link:', error)
+      
+      // Fallback para navegadores que não suportam clipboard API
+      const shareUrl = `${window.location.origin}/cliente/criativos/${criativo.id}`
+      
+      // Criar elemento temporário para copiar
+      const textArea = document.createElement('textarea')
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      
+      try {
+        document.execCommand('copy')
+        toast({
+          title: "Link copiado!",
+          description: "O link do criativo foi copiado para a área de transferência.",
+        })
+      } catch (fallbackError) {
+        console.error('Erro no fallback de cópia:', fallbackError)
+        toast({
+          title: "Erro ao copiar",
+          description: "Não foi possível copiar o link automaticamente. Copie manualmente: " + shareUrl,
+          variant: "destructive",
+        })
+      } finally {
+        document.body.removeChild(textArea)
+      }
     }
   }
 
@@ -385,9 +389,15 @@ export default function ClienteCriativoDetalhes() {
             </p>
           </div>
         </div>
-        <Badge className={getStatusColor(criativo.status)}>
-          {translateStatus(criativo.status)}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge className={getStatusColor(criativo.status)}>
+            {translateStatus(criativo.status)}
+          </Badge>
+          <Button variant="outline" size="sm" onClick={handleShare}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Compartilhar
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -398,88 +408,24 @@ export default function ClienteCriativoDetalhes() {
               <CardTitle>Visualização</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="relative">
-                {/* Navegação entre versões */}
-                {totalVersoes > 1 && (
-                  <div className="absolute top-2 left-2 right-2 flex justify-between z-10">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => navegarVersao('anterior')}
-                      className="bg-white/80 hover:bg-white/90"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => navegarVersao('proximo')}
-                      className="bg-white/80 hover:bg-white/90"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-                
-                {/* Indicador de versão atual */}
-                {totalVersoes > 1 && (
-                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
-                    <Badge variant="secondary" className="bg-white/80">
-                      {indiceAtual === 0 ? 'Principal' : `Versão ${indiceAtual}`}
-                    </Badge>
-                  </div>
-                )}
-
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden dark:bg-gray-800">
-                  {imagemAtual && (
-                    <>
-                      {imagemAtual.includes('.mp4') ? (
-                        <video
-                          src={imagemAtual}
-                          controls
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <img
-                          src={imagemAtual}
-                          alt={criativo.titulo || 'Criativo'}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
+              {/* Carrossel de versões */}
+              <Carousel
+                images={[criativo.url, ...versoes.map(v => v.url)]}
+                className="w-full"
+                showArrows={totalVersoes > 1}
+                showDots={totalVersoes > 1}
+                autoPlay={false}
+              />
               
-              {/* Miniaturas das versões */}
+              {/* Informações das versões */}
               {totalVersoes > 1 && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Todas as versões ({totalVersoes})</h4>
-                  <div className="grid grid-cols-4 gap-2">
-                    {/* Imagem principal */}
-                    <div 
-                      className={`aspect-square bg-gray-100 rounded overflow-hidden dark:bg-gray-800 cursor-pointer hover:opacity-75 border-2 ${indiceAtual === 0 ? 'border-blue-500' : 'border-transparent'}`}
-                      onClick={() => selecionarVersao(0)}
-                    >
-                      <img
-                        src={criativo.url}
-                        alt="Versão principal"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    
-                    {/* Versões adicionais */}
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Versões disponíveis ({totalVersoes})</h4>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <div>• <strong>Versão Principal:</strong> {criativo.fileName}</div>
                     {versoes.map((versao, index) => (
-                      <div 
-                        key={index} 
-                        className={`aspect-square bg-gray-100 rounded overflow-hidden dark:bg-gray-800 cursor-pointer hover:opacity-75 border-2 ${indiceAtual === index + 1 ? 'border-blue-500' : 'border-transparent'}`}
-                        onClick={() => selecionarVersao(index + 1)}
-                      >
-                        <img
-                          src={versao.url}
-                          alt={`Versão ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                      <div key={index}>
+                        • <strong>Versão {index + 1}:</strong> {versao.filename || `Versão ${index + 1}`}
                       </div>
                     ))}
                   </div>

@@ -45,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { apiService } from "@/lib/api"
+import { Carousel } from "@/components/ui/carousel"
 
 export default function CriativoDetalhesPage() {
   const params = useParams()
@@ -517,6 +518,52 @@ export default function CriativoDetalhesPage() {
     }
   }
 
+  // Função para compartilhar link do cliente
+  const handleShare = async () => {
+    if (!criativo) return
+
+    try {
+      // Construir o link do painel do cliente
+      const clientUrl = `${window.location.origin}/cliente/criativos/${criativo.id}`
+      
+      // Copiar para a área de transferência
+      await navigator.clipboard.writeText(clientUrl)
+      
+      toast({
+        title: "Link copiado!",
+        description: "O link do painel do cliente foi copiado para a área de transferência.",
+      })
+    } catch (error) {
+      console.error('Erro ao copiar link:', error)
+      
+      // Fallback para navegadores que não suportam clipboard API
+      const clientUrl = `${window.location.origin}/cliente/criativos/${criativo.id}`
+      
+      // Criar elemento temporário para copiar
+      const textArea = document.createElement('textarea')
+      textArea.value = clientUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      
+      try {
+        document.execCommand('copy')
+        toast({
+          title: "Link copiado!",
+          description: "O link do painel do cliente foi copiado para a área de transferência.",
+        })
+      } catch (fallbackError) {
+        console.error('Erro no fallback de cópia:', fallbackError)
+        toast({
+          title: "Erro ao copiar",
+          description: "Não foi possível copiar o link automaticamente. Copie manualmente: " + clientUrl,
+          variant: "destructive",
+        })
+      } finally {
+        document.body.removeChild(textArea)
+      }
+    }
+  }
+
   // Se não encontrou o criativo
   if (!criativo) {
     return (
@@ -627,65 +674,128 @@ export default function CriativoDetalhesPage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  {/* Verificar se é carrossel para mostrar todas as imagens */}
-                  {criativo?.arquivos && (() => {
-                    try {
-                      const arquivosData = JSON.parse(criativo.arquivos)
-                      if (Array.isArray(arquivosData) && arquivosData.length > 1) {
-                        return (
-                          <div className="space-y-4">
-                            <p className="text-sm font-medium">Carrossel ({arquivosData.length} imagens)</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {arquivosData.map((arquivo, index) => (
-                                <div key={`view-${criativo.id}-${arquivo.filename}-${index}`} className="relative bg-muted rounded-lg overflow-hidden">
-                                  <img
-                                    src={arquivo.url}
-                                    alt={`${criativo.fileName} - Imagem ${index + 1}`}
-                                    className="w-full h-auto object-contain max-h-[400px]"
-                                    style={{ imageRendering: 'crisp-edges' }}
-                                  />
-                                  <div className="absolute top-2 left-2">
-                                    <Badge variant="default" className="text-xs">
-                                      {index + 1}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
+                  {/* Carrossel de versões */}
+                  {(() => {
+                    // Preparar array de imagens para o carrossel
+                    const imagens: string[] = []
+                    
+                    // Adicionar imagem principal
+                    if (criativo?.url) {
+                      imagens.push(criativo.url)
+                    }
+                    
+                    // Adicionar versões se existirem
+                    if (criativo?.versoes) {
+                      try {
+                        const versoesData = JSON.parse(criativo.versoes)
+                        if (Array.isArray(versoesData)) {
+                          versoesData.forEach((versao: any) => {
+                            if (versao.url) {
+                              imagens.push(versao.url)
+                            }
+                          })
+                        }
+                      } catch (error) {
+                        console.error('Erro ao parsear versões:', error)
                       }
-                    } catch (error) {
-                      console.error('Erro ao parsear arquivos do carrossel:', error)
+                    }
+                    
+                    // Adicionar arquivos de carrossel se existirem
+                    if (criativo?.arquivos) {
+                      try {
+                        const arquivosData = JSON.parse(criativo.arquivos)
+                        if (Array.isArray(arquivosData)) {
+                          arquivosData.forEach((arquivo: any) => {
+                            if (arquivo.url && !imagens.includes(arquivo.url)) {
+                              imagens.push(arquivo.url)
+                            }
+                          })
+                        }
+                      } catch (error) {
+                        console.error('Erro ao parsear arquivos:', error)
+                      }
+                    }
+                    
+                    return (
+                      <Carousel
+                        images={imagens}
+                        className="w-full"
+                        showArrows={imagens.length > 1}
+                        showDots={imagens.length > 1}
+                        autoPlay={false}
+                      />
+                    )
+                  })()}
+                  
+                  {/* Informações das versões */}
+                  {(() => {
+                    const totalVersoes = 1 + 
+                      (criativo?.versoes ? (() => {
+                        try {
+                          const versoesData = JSON.parse(criativo.versoes)
+                          return Array.isArray(versoesData) ? versoesData.length : 0
+                        } catch {
+                          return 0
+                        }
+                      })() : 0) +
+                      (criativo?.arquivos ? (() => {
+                        try {
+                          const arquivosData = JSON.parse(criativo.arquivos)
+                          return Array.isArray(arquivosData) ? arquivosData.length : 0
+                        } catch {
+                          return 0
+                        }
+                      })() : 0)
+                    
+                    if (totalVersoes > 1) {
+                      return (
+                        <div className="mt-4 p-4 bg-muted rounded-lg">
+                          <h4 className="font-medium mb-2">Versões disponíveis ({totalVersoes})</h4>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <div>• <strong>Versão Principal:</strong> {criativo?.fileName}</div>
+                            {criativo?.versoes && (() => {
+                              try {
+                                const versoesData = JSON.parse(criativo.versoes)
+                                if (Array.isArray(versoesData)) {
+                                  return versoesData.map((versao: any, index: number) => (
+                                    <div key={index}>
+                                      • <strong>Versão {index + 1}:</strong> {versao.filename || `Versão ${index + 1}`}
+                                    </div>
+                                  ))
+                                }
+                              } catch (error) {
+                                console.error('Erro ao parsear versões:', error)
+                              }
+                              return null
+                            })()}
+                            {criativo?.arquivos && (() => {
+                              try {
+                                const arquivosData = JSON.parse(criativo.arquivos)
+                                if (Array.isArray(arquivosData) && arquivosData.length > 1) {
+                                  return arquivosData.map((arquivo: any, index: number) => (
+                                    <div key={index}>
+                                      • <strong>Carrossel {index + 1}:</strong> {arquivo.filename || `Imagem ${index + 1}`}
+                                    </div>
+                                  ))
+                                }
+                              } catch (error) {
+                                console.error('Erro ao parsear arquivos:', error)
+                              }
+                              return null
+                            })()}
+                          </div>
+                        </div>
+                      )
                     }
                     return null
                   })()}
-                  
-                  {/* Fallback para criativo único ou se não conseguir parsear */}
-                  {(!criativo?.arquivos || (() => {
-                    try {
-                      const arquivosData = JSON.parse(criativo.arquivos || '[]')
-                      return !Array.isArray(arquivosData) || arquivosData.length <= 1
-                    } catch {
-                      return true
-                    }
-                  })()) && (
-                    <div className="relative bg-muted rounded-lg overflow-hidden">
-                      <img
-                        src={criativo?.url}
-                        alt={criativo?.fileName}
-                        className="w-full h-auto object-contain max-h-[600px]"
-                        style={{ imageRendering: 'crisp-edges' }}
-                      />
-                    </div>
-                  )}
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Button variant="outline" size="sm">
                     <Download className="mr-2 h-4 w-4" />
                     Download Original
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleShare}>
                     <Share2 className="mr-2 h-4 w-4" />
                     Compartilhar
                   </Button>
@@ -759,26 +869,36 @@ export default function CriativoDetalhesPage() {
 
             <TabsContent value="versoes" className="space-y-4">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Histórico de Versões</CardTitle>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleAddVersion}
-                    disabled={isUploadingVersion}
-                  >
-                    {isUploadingVersion ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Adicionar Versão
-                      </>
-                    )}
-                  </Button>
+                                 <CardHeader className="flex flex-row items-center justify-between">
+                   <CardTitle>Histórico de Versões</CardTitle>
+                   <div className="flex items-center gap-2">
+                     <Button 
+                       variant="outline" 
+                       size="sm"
+                       onClick={handleShare}
+                     >
+                       <Share2 className="mr-2 h-4 w-4" />
+                       Compartilhar
+                     </Button>
+                     <Button 
+                       variant="outline" 
+                       size="sm"
+                       onClick={handleAddVersion}
+                       disabled={isUploadingVersion}
+                     >
+                       {isUploadingVersion ? (
+                         <>
+                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                           Enviando...
+                         </>
+                       ) : (
+                         <>
+                           <Plus className="mr-2 h-4 w-4" />
+                           Adicionar Versão
+                         </>
+                       )}
+                     </Button>
+                   </div>
                   <Input
                     ref={fileInputRef}
                     type="file"
